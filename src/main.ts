@@ -1,14 +1,9 @@
-import { duneQuery } from './providers/dune';
 import { batchRun, getConnectedAddresses, getFIDs, getUserProfile } from './providers/farcaster';
-import { DuneTransactionRow } from './types';
-import fs from 'fs';
 import prisma from './prisma';
 import { syncCreatedDrops, syncMetadataUpdated } from './providers/zora';
 import { linkDrops } from './lib/sync';
 
 const syncUsers = async () => {
-  // If there is no
-
   const latestHubEvent = await prisma.hubEvent.findFirst({
     orderBy: { timestamp: 'desc' },
   });
@@ -19,8 +14,6 @@ const syncUsers = async () => {
     await batchRun(async (fids: number[]) => {
       const users = await Promise.all(
         fids.map(async (fid) => {
-          // const connectedAddresses = await getConnectedAddresses(fid);
-
           const profile = await getUserProfile(fid);
 
           return {

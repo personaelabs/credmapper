@@ -1,3 +1,48 @@
+import { Chain as DBChain } from '@prisma/client';
+import { Chain } from 'viem';
+import * as _chains from 'viem/chains';
+
+const PGN: Chain = {
+  name: 'Public Goods Network',
+  id: 424,
+  rpcUrls: {
+    default: {
+      http: ['https://rpc.publicgoods.network'],
+    },
+    public: {
+      http: ['https://rpc.publicgoods.network'],
+    },
+  },
+  network: 'mainnet',
+  nativeCurrency: {
+    name: 'ETH',
+    symbol: 'ETH',
+    decimals: 18, // TODO: check
+  },
+};
+
+export const chains = {
+  ..._chains,
+  PGN,
+};
+
+export const ToDBChain = (chain: Chain): DBChain => {
+  switch (chain) {
+    case chains.base:
+      return DBChain.Base;
+    case chains.mainnet:
+      return DBChain.Ethereum;
+    case chains.optimism:
+      return DBChain.Optimism;
+    case chains.zora:
+      return DBChain.Zora;
+    case chains.base:
+      return DBChain.Zora;
+  }
+
+  throw new Error(`Unknown chain ${chain}`);
+};
+
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };

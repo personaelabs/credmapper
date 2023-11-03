@@ -29,6 +29,7 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
 
   // Get the latest block number
   const latestBlock = await client.getBlockNumber();
+  console.log(`Latest block is ${latestBlock}`);
 
   const batchSize = BigInt(10000);
 
