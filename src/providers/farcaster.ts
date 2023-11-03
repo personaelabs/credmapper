@@ -72,13 +72,13 @@ export const batchQueryHubble = async <T>(
 export const batchRun = async <T>(
   fn: (params: T[]) => Promise<void>,
   params: T[],
+  operationLabel: string = '',
   batchSize: number = 100,
 ) => {
   for (let i = 0; i < params.length; i += batchSize) {
-    console.time(`batch ${i} - ${i + batchSize}`);
+    console.log(`${operationLabel} ${i}/${params.length}`);
     const batch = params.slice(i, i + batchSize);
     await fn(batch);
-    console.timeEnd(`batch ${i} - ${i + batchSize}`);
   }
 };
 

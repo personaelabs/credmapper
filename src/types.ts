@@ -1,3 +1,4 @@
+import { Chain } from '@prisma/client';
 import { Hex } from 'viem';
 
 export interface UserProfile {
@@ -41,11 +42,21 @@ export interface ZoraDrop {
   contractAddress: string;
 }
 
+// Mint of a Drop or an Edition
+export interface Mint {
+  contractAddress: Hex;
+  minter: Hex;
+  tokenId?: string;
+  title: string;
+  image: string;
+  chain: Chain;
+}
+
 export interface IndexedRecord {
   fid: string;
   username: string;
   bio: string;
   displayName: string;
   pfp: string;
-  drops: ZoraDrop[];
+  mints: Mint[];
 }

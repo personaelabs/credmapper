@@ -1,8 +1,15 @@
 import { batchRun, getConnectedAddresses, getFIDs, getUserProfile } from './providers/farcaster';
 import prisma from './prisma';
-import { syncCreatedDrops, syncMetadataUpdated } from './providers/zora';
-import { linkDrops } from './lib/sync';
+import {
+  syncCreatedDrops,
+  syncEditionInitialized,
+  syncMetadataUpdated,
+  syncTransfers,
+} from './providers/zora';
+import { linkAddressTraits } from './lib/sync';
+import { Hex } from 'viem';
 
+// Sync Farcaster user profiles
 const syncUsers = async () => {
   const latestHubEvent = await prisma.hubEvent.findFirst({
     orderBy: { timestamp: 'desc' },
@@ -11,32 +18,36 @@ const syncUsers = async () => {
   if (!latestHubEvent) {
     const fids = await getFIDs();
 
-    await batchRun(async (fids: number[]) => {
-      const users = await Promise.all(
-        fids.map(async (fid) => {
-          const profile = await getUserProfile(fid);
+    await batchRun(
+      async (fids: number[]) => {
+        const users = await Promise.all(
+          fids.map(async (fid) => {
+            const profile = await getUserProfile(fid);
 
-          return {
-            fid,
-            fcUsername: profile?.username,
-            displayName: profile?.displayName,
-            pfp: profile?.pfp,
-            bio: profile?.bio,
-          };
-        }),
-      );
+            return {
+              fid,
+              fcUsername: profile?.username,
+              displayName: profile?.displayName,
+              pfp: profile?.pfp,
+              bio: profile?.bio,
+            };
+          }),
+        );
 
-      console.log(`Saving users...`);
-      await prisma.user.createMany({
-        data: users,
-        skipDuplicates: true,
-      });
-    }, fids);
+        await prisma.user.createMany({
+          data: users,
+          skipDuplicates: true,
+        });
+      },
+      fids,
+      'Sync users',
+    );
   } else {
     // TODO: Sync new users by going through the hub events
   }
 };
 
+// Sync Farcaster connected addresses
 const syncConnectedAddresses = async () => {
   const latestHubEvent = await prisma.hubEvent.findFirst({
     orderBy: { timestamp: 'desc' },
@@ -50,49 +61,62 @@ const syncConnectedAddresses = async () => {
     });
     const fids = users.map((u) => u.fid);
 
-    await batchRun(async (fids: number[]) => {
-      const connectedAddresses = (
-        await Promise.all(
-          fids.map(async (fid) => {
-            const addresses = await getConnectedAddresses(fid);
-            return addresses.map((address) => ({
-              userFid: fid,
-              address,
-            }));
-          }),
-        )
-      ).flat();
+    await batchRun(
+      async (fids: number[]) => {
+        const connectedAddresses = (
+          await Promise.all(
+            fids.map(async (fid) => {
+              const addresses = await getConnectedAddresses(fid);
+              return addresses.map((address) => ({
+                userFid: fid,
+                address,
+              }));
+            }),
+          )
+        ).flat();
 
-      // Link drops to creators
-      for (const connectedAddress of connectedAddresses) {
-        await linkDrops(connectedAddress.address);
-      }
-
-      console.log(`Saving connected addresses...`);
-      await prisma.connectedAddress.createMany({
-        data: connectedAddresses,
-        skipDuplicates: true,
-      });
-    }, fids);
+        await prisma.connectedAddress.createMany({
+          data: connectedAddresses,
+          skipDuplicates: true,
+        });
+      },
+      fids,
+      'Sync addresses',
+    );
   } else {
     // TODO: Sync new users by going through the hub events
   }
 };
 
-const sync = async () => {
-  console.log(`Syncing...`);
+const linkAllAddressTraits = async () => {
+  const addresses = await prisma.connectedAddress.findMany({
+    select: {
+      address: true,
+    },
+  });
 
-  console.log(`Syncing users...`);
+  await batchRun(
+    async (addresses: Hex[]) => {
+      await Promise.all(addresses.map((address) => linkAddressTraits(address)));
+    },
+    addresses.map((a) => a.address as Hex),
+    'Link traits',
+  );
+};
+
+const sync = async () => {
+  await syncCreatedDrops();
+  await syncMetadataUpdated();
+  await syncTransfers();
+  await syncEditionInitialized();
+
   await syncUsers();
 
-  console.log(`Syncing connected addresses...`);
   await syncConnectedAddresses();
 
-  console.log(`Syncing new drops...`);
-  await syncCreatedDrops();
-
-  console.log(`Syncing metadata updates...`);
-  await syncMetadataUpdated();
+  // Link all the traits indexed by the above functions
+  // to the Farcaster addresses
+  await linkAllAddressTraits();
 };
 
 sync();

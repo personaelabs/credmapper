@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Chain, createPublicClient, http } from 'viem';
 import { chains } from '../utils';
 

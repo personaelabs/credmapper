@@ -19,16 +19,18 @@ enum Chain {
 }
 
 model CreateDropEvent {
-  transactionHash        String                @id
-  editionContractAddress String                @unique
-  blockNumber            BigInt
-  creator                String
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
-  connectedAddress       ConnectedAddress?     @relation(fields: [connectedCreator], references: [address])
-  connectedCreator       String?
-  metadataUpdates        MetadataUpdateEvent[]
-  chain                  Chain                 @default(Zora)
+  transactionHash         String                    @id
+  editionContractAddress  String                    @unique
+  blockNumber             BigInt
+  creator                 String
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  connectedAddress        ConnectedAddress?         @relation(fields: [connectedCreator], references: [address])
+  connectedCreator        String?
+  metadataUpdates         MetadataUpdateEvent[]
+  chain                   Chain                     @default(Zora)
+  TransferEvent           TransferEvent[]
+  EditionInitializedEvent EditionInitializedEvent[]
 }
 
 model MetadataUpdateEvent {
@@ -43,6 +45,37 @@ model MetadataUpdateEvent {
   updatedAt       DateTime         @updatedAt
   CreateDropEvent CreateDropEvent? @relation(fields: [contractAddress], references: [editionContractAddress])
   chain           Chain            @default(Zora)
+}
+
+model EditionInitializedEvent {
+  transactionHash String           @id
+  blockNumber     BigInt
+  contractAddress String
+  description     String
+  imageURI        String
+  animationURI    String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  CreateDropEvent CreateDropEvent? @relation(fields: [contractAddress], references: [editionContractAddress])
+  chain           Chain            @default(Zora)
+  TransferEvent   TransferEvent[]
+}
+
+model TransferEvent {
+  transactionHash         String                   @id
+  blockNumber             BigInt
+  contractAddress         String
+  tokenId                 BigInt
+  from                    String
+  to                      String
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  CreateDropEvent         CreateDropEvent?         @relation(fields: [contractAddress], references: [editionContractAddress])
+  EditionInitializedEvent EditionInitializedEvent? @relation(fields: [contractAddress], references: [contractAddress])
+  chain                   Chain                    @default(Zora)
+
+  connecttedTo     String?
+  connectedAddress ConnectedAddress? @relation(fields: [connecttedTo], references: [address])
 }
 
 model User {
@@ -64,7 +97,8 @@ model ConnectedAddress {
   User    User? @relation(fields: [userFid], references: [fid])
   userFid Int?
 
-  drops CreateDropEvent[]
+  drops     CreateDropEvent[]
+  transfers TransferEvent[]
 }
 
 model HubEvent {
@@ -74,4 +108,14 @@ model HubEvent {
   timestamp DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SyncInfo {
+  eventName    String
+  synchedBlock BigInt
+  chain        Chain
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@id([eventName, chain])
 }

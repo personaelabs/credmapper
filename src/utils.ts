@@ -43,6 +43,21 @@ export const ToDBChain = (chain: Chain): DBChain => {
   throw new Error(`Unknown chain ${chain}`);
 };
 
+export const ToViemChain = (chain: DBChain): Chain => {
+  switch (chain) {
+    case DBChain.Base:
+      return chains.base;
+    case DBChain.Ethereum:
+      return chains.mainnet;
+    case DBChain.Optimism:
+      return chains.optimism;
+    case DBChain.Zora:
+      return chains.zora;
+  }
+
+  throw new Error(`Unknown chain ${chain}`);
+};
+
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };

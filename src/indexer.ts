@@ -1,22 +1,29 @@
+import { isConstructorDeclaration } from 'typescript';
 import prisma from './prisma';
-import { IndexedRecord, ZoraDrop } from './types';
+import { IndexedRecord, Mint, ZoraDrop } from './types';
 import fs from 'fs';
+import { Hex } from 'viem';
 
 const MAX_RECORD_BYTES = 10000;
 
-export const indexCreators = async () => {
-  const usersWithDrops = await prisma.user.findMany({
+export const indexMinters = async () => {
+  // Get all Farcaster users with at least one mint
+  const fcMinters = await prisma.user.findMany({
     include: {
       connectedAddresses: {
         include: {
-          drops: true,
+          transfers: {
+            where: {
+              from: '0x0000000000000000000000000000000000000000',
+            },
+          },
         },
       },
     },
     where: {
       connectedAddresses: {
         some: {
-          drops: {
+          transfers: {
             some: {},
           },
         },
@@ -24,18 +31,24 @@ export const indexCreators = async () => {
     },
   });
 
-  const allDropContracts = usersWithDrops
-    .map((user) =>
-      user.connectedAddresses
-        .map((address) => address.drops.map((drop) => drop.editionContractAddress))
+  // Get all contracts that have been minted to
+  const mintedContracts = [
+    ...new Set(
+      fcMinters
+        .map((user) =>
+          user.connectedAddresses
+            .map((address) => address.transfers.map((transfer) => transfer.contractAddress))
+            .flat(),
+        )
         .flat(),
-    )
-    .flat();
+    ),
+  ];
 
-  const metadataUpdates = await prisma.metadataUpdateEvent.findMany({
+  // Get all metadata fr Drops
+  const dropsMeta = await prisma.metadataUpdateEvent.findMany({
     where: {
       contractAddress: {
-        in: allDropContracts,
+        in: mintedContracts,
       },
     },
     orderBy: {
@@ -43,54 +56,86 @@ export const indexCreators = async () => {
     },
   });
 
+  // get all metadata for Editions
+  const editionsMeta = await prisma.editionInitializedEvent.findMany({
+    where: {
+      contractAddress: {
+        in: mintedContracts,
+      },
+    },
+    orderBy: {
+      blockNumber: 'desc',
+    },
+  });
+
+  // Transform the data into the format that can be indeed by Algolia
   const indexedRecords: IndexedRecord[] = [];
+  for (const user of fcMinters) {
+    const userMints: Mint[] = [];
+    for (const address of user.connectedAddresses) {
+      for (const transfer of address.transfers) {
+        const contractAddress = transfer.contractAddress;
+        const dropMeta = dropsMeta.find((drop) => drop.contractAddress === contractAddress);
+        const editionMeta = editionsMeta.find(
+          (edition) => edition.contractAddress === contractAddress,
+        );
 
-  for (const user of usersWithDrops) {
-    const dropsWithMeta: ZoraDrop[] = user.connectedAddresses
-      .map((address) =>
-        address.drops
-          .map((drop) => {
-            const meta = metadataUpdates.find(
-              (metadataUpdate) => metadataUpdate.contractAddress === drop.editionContractAddress,
-            );
+        // If this is a drop, we can get the drop title and image from the metadata
+        if (dropMeta) {
+          userMints.push({
+            contractAddress: transfer.contractAddress as Hex,
+            minter: transfer.to as Hex,
+            dropTitle: dropMeta.name,
+            dropImage: dropMeta.image,
+            tokenId: transfer.tokenId.toString(),
+            chain: transfer.chain,
+          });
+        } else if (editionMeta) {
+          const description = editionMeta.description;
+          if (description.length > 25) {
+            console.log(`Skipping ${editionMeta.contractAddress} because description is too long`);
+          } else {
+            // If this is an edition, we can get the drop title and image from the edition metadata
+            userMints.push({
+              contractAddress: transfer.contractAddress as Hex,
+              minter: transfer.to as Hex,
+              dropTitle: editionMeta.description, // There is no name field so we use the description
+              dropImage: editionMeta.imageURI,
+              tokenId: transfer.tokenId.toString(),
+              chain: transfer.chain,
+            });
+          }
+        } else {
+          // console.log(`No metadata found for ${transfer.contractAddress}`);
+        }
+      }
+    }
 
-            if (meta) {
-              return {
-                name: meta.name,
-                image: meta.image,
-                contractAddress: drop.editionContractAddress,
-              };
-            } else {
-              return false;
-            }
-          })
-          .flat(),
-      )
-      .flat()
-      .filter((drop) => drop) as ZoraDrop[];
-
-    if (dropsWithMeta.length > 0) {
-      const record = {
+    if (userMints.length > 0) {
+      const userRecord = {
         fid: user.fid.toString(),
         pfp: user.pfp || '',
         username: user.fcUsername || '',
         displayName: user.displayName || '',
         bio: user.bio || '',
-        drops: dropsWithMeta,
+        mints: userMints,
       };
 
-      const recordSize = Buffer.from(JSON.stringify(record), 'utf-8').byteLength;
-      if (recordSize >= MAX_RECORD_BYTES) {
+      const recordSize = Buffer.from(JSON.stringify(userRecord), 'utf8').byteLength;
+
+      if (recordSize > MAX_RECORD_BYTES) {
         console.log(
-          `Record (fid:${record.fid}) exceeds max size ${recordSize}/${MAX_RECORD_BYTES}`,
+          `Skipping ${userRecord.username} because record size it exceed size limit ${recordSize}/${MAX_RECORD_BYTES}`,
         );
       } else {
-        indexedRecords.push(record);
+        indexedRecords.push(userRecord);
       }
     }
   }
 
-  fs.writeFileSync('./index.json', JSON.stringify(indexedRecords, null, 2));
+  // Write the data to a JSON file
+  const json = JSON.stringify(indexedRecords, null, 2);
+  fs.writeFileSync('./index.json', json);
 };
 
-indexCreators();
+indexMinters();

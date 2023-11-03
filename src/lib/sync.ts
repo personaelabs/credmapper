@@ -1,40 +1,46 @@
 import { Abi, Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'viem';
-import { retry } from '../utils';
+import { ToDBChain, retry } from '../utils';
 import prisma from '../prisma';
 
-// Link ConnectedAddress to creators
-export const linkDrops = async (address: Hex) => {
-  const result = await prisma.createDropEvent.updateMany({
-    where: {
-      creator: address,
+export const linkAddressTraits = async (address: Hex) => {
+  // Link foreign keys
+  await prisma.transferEvent.updateMany({
+    data: {
+      connecttedTo: address,
     },
+    where: {
+      to: address,
+    },
+  });
+
+  await prisma.createDropEvent.updateMany({
     data: {
       connectedCreator: address,
     },
+    where: {
+      creator: address,
+    },
   });
-  if (result.count > 0) {
-    console.log(`Linked ${result.count} drops to ${address}`);
-  }
 };
 
-export const syncLogs = async <T extends Transport, C extends Chain>(
+export const syncContractLogs = async <T extends Transport, C extends Chain>(
   client: PublicClient<T, C>,
   abi: Abi,
-  contractAddress: Hex,
+  contractAddress: Hex | Hex[],
   eventName: string,
   fromBlock: bigint,
   saveLogs: (logs: GetFilterLogsReturnType) => Promise<void>,
+  batchSize: bigint = BigInt(10000),
 ) => {
-  console.log(`Syncing ${eventName} events from ${fromBlock}`);
-
   // Get the latest block number
   const latestBlock = await client.getBlockNumber();
-  console.log(`Latest block is ${latestBlock}`);
-
-  const batchSize = BigInt(10000);
 
   for (let batchFrom = fromBlock + BigInt(1); batchFrom < latestBlock; batchFrom += batchSize) {
-    console.log(`Fetching events from ${batchFrom} to ${batchFrom + batchSize}`);
+    console.log(
+      `Sync: ${eventName} (${
+        client.chain.name
+      }) ${batchFrom.toLocaleString()}/${latestBlock.toLocaleString()}`,
+    );
 
     try {
       const filter = await retry(async () => {
@@ -53,6 +59,23 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
       });
 
       await saveLogs(logs);
+
+      await prisma.syncInfo.upsert({
+        where: {
+          eventName_chain: {
+            eventName,
+            chain: ToDBChain(client.chain),
+          },
+        },
+        update: {
+          synchedBlock: batchFrom + batchSize,
+        },
+        create: {
+          eventName,
+          chain: ToDBChain(client.chain),
+          synchedBlock: batchFrom + batchSize,
+        },
+      });
     } catch (err) {
       console.log(
         `Failed to fetch ${eventName} events from ${batchFrom} to ${batchFrom + batchSize}`,

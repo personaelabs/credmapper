@@ -12,6 +12,10 @@ const contracts = (
     address: Hex;
     deployedBlock?: number;
   };
+  EDITION_METADATA_RENDERER?: {
+    address: Hex;
+    deployedBlock?: number;
+  };
 } => {
   switch (chain) {
     case chains.base:
@@ -46,6 +50,10 @@ const contracts = (
           address: '0x96CcF205A366E15E261d77B14586389f80a029e9',
           deployedBlock: 97155822,
         },
+        EDITION_METADATA_RENDERER: {
+          address: '0xa2a7D8bcE0bf58D177137ECB94f3Fa6aA06aA7A1',
+          deployedBlock: 97155826,
+        },
       };
     /*
       case chains.PGN:
@@ -65,7 +73,11 @@ const contracts = (
           deployedBlock: 46799,
         },
         DROP_METADATA_RENDERER: {
-          address: '0x4A0ad3Ef9bE8095590D854bC8481C9E50922a3c0',
+          address: '0xCA7bF48453B72e4E175267127B4Ed7EB12F83b93',
+          deployedBlock: 46799,
+        },
+        EDITION_METADATA_RENDERER: {
+          address: '0xCA7bF48453B72e4E175267127B4Ed7EB12F83b93',
           deployedBlock: 46799,
         },
       };
