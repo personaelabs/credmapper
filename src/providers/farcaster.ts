@@ -2,15 +2,18 @@ import 'dotenv/config';
 import axios from 'axios';
 import { VerificationsByFidResponse, UserProfile, FidsResponse } from '../types';
 import { Hex } from 'viem';
+import { retry } from '../utils';
 
 const HUBBLE_URL = 'http://127.0.0.01:2281/v1';
 
 const queryHubble = async <T>(method: string, params: { [key: string]: string }): Promise<T> => {
-  const { data } = await axios.get(`${HUBBLE_URL}/${method}`, {
-    params,
-  });
+  return await retry(async () => {
+    const { data } = await axios.get(`${HUBBLE_URL}/${method}`, {
+      params,
+    });
 
-  return data;
+    return data;
+  });
 };
 
 export const getFIDs = async ({ limit }: { limit?: number } = {}): Promise<number[]> => {
@@ -66,21 +69,17 @@ export const batchQueryHubble = async <T>(
   return responses;
 };
 
-export const batchRun = async <T, R>(
-  fn: (params: T) => Promise<R>,
+export const batchRun = async <T>(
+  fn: (params: T[]) => Promise<void>,
   params: T[],
   batchSize: number = 100,
 ) => {
-  const responses: R[] = [];
   for (let i = 0; i < params.length; i += batchSize) {
     console.time(`batch ${i} - ${i + batchSize}`);
     const batch = params.slice(i, i + batchSize);
-    const batchResponses = await Promise.all(batch.map((param) => fn(param)));
-    responses.push(...batchResponses);
+    await fn(batch);
     console.timeEnd(`batch ${i} - ${i + batchSize}`);
   }
-
-  return responses;
 };
 
 export const getConnectedAddresses = async (fid: number): Promise<Hex[]> => {
@@ -97,4 +96,53 @@ export const getConnectedAddresses = async (fid: number): Promise<Hex[]> => {
   const connectedAddresses = messages.map((m) => m.data.verificationAddEthAddressBody.address);
 
   return connectedAddresses;
+};
+
+const userDataTypes = [
+  {
+    type: 'php',
+    key: 1,
+  },
+  {
+    type: 'displayName',
+    key: 2,
+  },
+  {
+    type: 'bio',
+    key: 3,
+  },
+  {
+    type: 'username',
+    key: 6,
+  },
+];
+
+// Get Farcaster user profile by FID from Hubble
+export const getUserProfile = async (fid: number): Promise<UserProfile | null> => {
+  let profile: any = {};
+  try {
+    for (const { key, type } of userDataTypes) {
+      const { data } = await axios.get(HUBBLE_URL + '/userDataByFid', {
+        params: {
+          fid,
+          user_data_type: key,
+        },
+      });
+
+      const value = data.data.userDataBody.value;
+      if (value) {
+        profile[type] = value;
+      }
+    }
+  } catch (err: any) {
+    return null;
+  }
+
+  return {
+    fid: fid.toString(),
+    pfp: profile.php || null,
+    displayName: profile.displayName || null,
+    bio: profile.bio || null,
+    username: profile.username || null,
+  };
 };

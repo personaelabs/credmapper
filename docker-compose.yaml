@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  database:
+    image: 'postgres:15'
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=traitmapper
+    volumes:
+      - traitmapper_pg_data:/var/lib/postgresql/data
+volumes:
+  traitmapper_pg_data:

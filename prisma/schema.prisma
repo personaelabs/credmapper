@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Chain {
+  Ethereum
+  Zora
+  Base
+  Optimism
+  PGN
+}
+
+model CreateDropEvent {
+  transactionHash        String                @id
+  editionContractAddress String                @unique
+  blockNumber            BigInt
+  creator                String
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  connectedAddress       ConnectedAddress?     @relation(fields: [connectedCreator], references: [address])
+  connectedCreator       String?
+  metadataUpdates        MetadataUpdateEvent[]
+  chain                  Chain                 @default(Zora)
+}
+
+model MetadataUpdateEvent {
+  transactionHash String           @id
+  blockNumber     BigInt
+  contractAddress String
+  tokenURI        String
+  name            String
+  description     String
+  image           String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  CreateDropEvent CreateDropEvent? @relation(fields: [contractAddress], references: [editionContractAddress])
+  chain           Chain            @default(Zora)
+}
+
+model User {
+  fid                Int                @id
+  fcUsername         String?
+  displayName        String?
+  pfp                String?
+  bio                String?
+  followersCount     Int                @default(0)
+  createdAt          DateTime           @default(now())
+  connectedAddresses ConnectedAddress[]
+}
+
+model ConnectedAddress {
+  address   String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  User    User? @relation(fields: [userFid], references: [fid])
+  userFid Int?
+
+  drops CreateDropEvent[]
+}
+
+model HubEvent {
+  id        BigInt   @id
+  type      String
+  body      Json
+  timestamp DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

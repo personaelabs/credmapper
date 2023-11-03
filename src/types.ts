@@ -5,11 +5,7 @@ export interface UserProfile {
   pfp: string | null;
   displayName: string | null;
   bio: string | null;
-  url: string | null;
   username: string | null;
-  ens: string | null;
-  ensAddress: string | null;
-  followers: string | null;
 }
 
 export interface VerificationsByFidResponse {
@@ -31,4 +27,25 @@ export interface FidsResponse {
 export interface DuneTransactionRow {
   to: string;
   from: string;
+}
+
+export interface ZoraNFTMetadata {
+  name: string;
+  description: string;
+  image: string;
+}
+
+export interface ZoraDrop {
+  name: string;
+  image: string;
+  contractAddress: string;
+}
+
+export interface IndexedRecord {
+  fid: string;
+  username: string;
+  bio: string;
+  displayName: string;
+  pfp: string;
+  drops: ZoraDrop[];
 }
