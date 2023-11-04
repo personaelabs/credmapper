@@ -11,62 +11,7 @@ datasource db {
 }
 
 enum Chain {
-  Ethereum
   Zora
-  Base
-  Optimism
-  PGN
-}
-
-model CreateDropEvent {
-  transactionHash        String   @id
-  editionContractAddress String   @unique
-  blockNumber            BigInt
-  creator                String
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  chain                  Chain    @default(Zora)
-}
-
-model MetadataUpdateEvent {
-  transactionHash String   @id
-  blockNumber     BigInt
-  contractAddress String
-  tokenURI        String
-  name            String
-  description     String
-  image           String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  chain           Chain    @default(Zora)
-}
-
-model EditionInitializedEvent {
-  transactionHash String   @id
-  blockNumber     BigInt
-  contractAddress String
-  description     String
-  imageURI        String
-  animationURI    String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  chain           Chain    @default(Zora)
-}
-
-model TransferEvent {
-  transactionHash String   @id
-  blockNumber     BigInt
-  contractAddress String
-  tokenId         BigInt
-  from            String
-  to              String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  chain           Chain    @default(Zora)
-
-  // Optional foreign key
-  connectedAddress           String?
-  transferToConnectedAddress ConnectedAddress? @relation(fields: [connectedAddress], references: [address])
 }
 
 model SetupNewContractEvent {
@@ -118,7 +63,6 @@ model ConnectedAddress {
   User    User? @relation(fields: [userFid], references: [fid])
   userFid Int?
 
-  transfers TransferEvent[]
   purchases PurchasedEvent[]
 }
 

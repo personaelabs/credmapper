@@ -1,18 +1,9 @@
 import { Abi, Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'viem';
-import { ToDBChain, retry } from '../utils';
 import prisma from '../prisma';
+import { Chain as DBChain } from '@prisma/client';
 
 export const linkAddressTraits = async (address: Hex) => {
   // Link foreign keys
-  await prisma.transferEvent.updateMany({
-    data: {
-      connectedAddress: address,
-    },
-    where: {
-      to: address,
-    },
-  });
-
   await prisma.purchasedEvent.updateMany({
     data: {
       connectedAddress: address,
@@ -57,7 +48,7 @@ export const syncContractLogs = async <T extends Transport, C extends Chain>(
         where: {
           eventName_chain: {
             eventName,
-            chain: ToDBChain(client.chain),
+            chain: DBChain.Zora,
           },
         },
         update: {
@@ -65,7 +56,7 @@ export const syncContractLogs = async <T extends Transport, C extends Chain>(
         },
         create: {
           eventName,
-          chain: ToDBChain(client.chain),
+          chain: DBChain.Zora,
           synchedBlock: batchFrom + batchSize,
         },
       });

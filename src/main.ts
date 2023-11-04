@@ -1,13 +1,6 @@
 import { batchRun, getConnectedAddresses, getFIDs, getUserProfile } from './providers/farcaster';
 import prisma from './prisma';
-import {
-  syncCreatedDrops,
-  syncEditionInitialized,
-  syncMetadataUpdated,
-  syncPurchasedEvents,
-  syncSetupNewContractEvents,
-  syncTransfers,
-} from './providers/zora';
+import { syncPurchasedEvents, syncSetupNewContractEvents } from './providers/zora';
 import { linkAddressTraits } from './lib/sync';
 import { Hex } from 'viem';
 
@@ -107,12 +100,6 @@ const linkAllAddressTraits = async () => {
 };
 
 const sync = async () => {
-  // 721 contracts
-  await syncCreatedDrops();
-  await syncMetadataUpdated();
-  await syncTransfers();
-  await syncEditionInitialized();
-
   // 1155 contracts
   await syncSetupNewContractEvents();
   await syncPurchasedEvents();

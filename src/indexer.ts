@@ -11,36 +11,18 @@ export const indexMinters = async () => {
     include: {
       connectedAddresses: {
         include: {
-          transfers: {
-            where: {
-              from: '0x0000000000000000000000000000000000000000',
-            },
-          },
           purchases: true,
         },
       },
     },
     where: {
-      OR: [
-        {
-          connectedAddresses: {
-            some: {
-              transfers: {
-                some: {},
-              },
-            },
+      connectedAddresses: {
+        some: {
+          purchases: {
+            some: {},
           },
         },
-        {
-          connectedAddresses: {
-            some: {
-              purchases: {
-                some: {},
-              },
-            },
-          },
-        },
-      ],
+      },
     },
   });
 
@@ -50,39 +32,12 @@ export const indexMinters = async () => {
       fcMinters
         .map((user) =>
           user.connectedAddresses
-            .map((address) => [
-              ...address.transfers.map((transfer) => transfer.contractAddress),
-              ...address.purchases.map((purchase) => purchase.contractAddress),
-            ])
+            .map((address) => [...address.purchases.map((purchase) => purchase.contractAddress)])
             .flat(),
         )
         .flat(),
     ),
   ];
-
-  // Get all metadata fr ERC721 Drops
-  const erc721Meta = await prisma.metadataUpdateEvent.findMany({
-    where: {
-      contractAddress: {
-        in: mintedContracts,
-      },
-    },
-    orderBy: {
-      blockNumber: 'desc',
-    },
-  });
-
-  // Get all metadata fr ERC721 editions
-  const erc721EditionsMeta = await prisma.editionInitializedEvent.findMany({
-    where: {
-      contractAddress: {
-        in: mintedContracts,
-      },
-    },
-    orderBy: {
-      blockNumber: 'desc',
-    },
-  });
 
   // Get all metadata for 1155 contracts
   const erc1155Metadata = await prisma.setupNewContractEvent.findMany({
@@ -101,42 +56,6 @@ export const indexMinters = async () => {
   for (const user of fcMinters) {
     const userMints: Mint[] = [];
     for (const address of user.connectedAddresses) {
-      // 1. Process all ERC721 transfers
-      for (const transfer of address.transfers) {
-        const contractAddress = transfer.contractAddress;
-
-        // Search for the metadata for this contract
-        const meta = erc721Meta.find((drop) => drop.contractAddress === contractAddress);
-        const editionMeta = erc721EditionsMeta.find(
-          (edition) => edition.contractAddress === contractAddress,
-        );
-
-        // If this is a drop, we can get the drop title and image from the metadata
-        if (meta) {
-          userMints.push({
-            contractAddress: transfer.contractAddress as Hex,
-            minter: transfer.to as Hex,
-            title: meta.name,
-            image: meta.image,
-            tokenId: transfer.tokenId.toString(),
-            chain: transfer.chain,
-          });
-        } else if (editionMeta) {
-          const description = editionMeta.description;
-          // If this is an edition, we can get the drop title and image from the edition metadata
-          userMints.push({
-            contractAddress: transfer.contractAddress as Hex,
-            minter: transfer.to as Hex,
-            title: editionMeta.description, // There is no name field so we use the description
-            image: editionMeta.imageURI,
-            tokenId: transfer.tokenId.toString(),
-            chain: transfer.chain,
-          });
-        } else {
-          // console.log(`No metadata found for ${transfer.contractAddress}`);
-        }
-      }
-
       for (const purchase of address.purchases) {
         const erc1155Meta = erc1155Metadata.find(
           (meta) => meta.newContract === purchase.contractAddress,
