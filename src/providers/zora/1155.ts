@@ -2,7 +2,7 @@ import prisma from '../../prisma';
 import { Abi, GetFilterLogsReturnType, Hex } from 'viem';
 import ZoraCreator1155Impl from './abi/ZoraCreator1155Impl.json';
 import ZoraCreator1155FactoryImpl from './abi/ZoraCreator1155FactoryImpl.json';
-import { syncContractLogs } from '../../lib/sync';
+import { syncContractLogs } from '../../lib/syncLogs';
 import contracts from './contracts';
 import { getClient } from '../ethRpc';
 import { getSynchedBlock } from '../../lib/syncInfo';

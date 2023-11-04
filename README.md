@@ -3,11 +3,11 @@
 Sync all contract events and Farcaster users
 
 ```
-pnpm ts-node ./src/main.ts
+pnpm sync
 ```
 
 Generate a JSON file to upload to Algolia
 
 ```
-pnpm ts-node ./src/indexer.ts
+pnpm index
 ```

@@ -2,18 +2,6 @@ import { Abi, Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } fro
 import prisma from '../prisma';
 import { Chain as DBChain } from '@prisma/client';
 
-export const linkAddressTraits = async (address: Hex) => {
-  // Link foreign keys
-  await prisma.purchasedEvent.updateMany({
-    data: {
-      connectedAddress: address,
-    },
-    where: {
-      minter: address,
-    },
-  });
-};
-
 export const syncContractLogs = async <T extends Transport, C extends Chain>(
   client: PublicClient<T, C>,
   abi: Abi,

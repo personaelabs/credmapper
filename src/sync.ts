@@ -1,7 +1,7 @@
 import { batchRun, getConnectedAddresses, getFIDs, getUserProfile } from './providers/farcaster';
 import prisma from './prisma';
 import { syncPurchasedEvents, syncSetupNewContractEvents } from './providers/zora';
-import { linkAddressTraits } from './lib/sync';
+import { linkAddressTraits } from './lib/linkTraits';
 import { Hex } from 'viem';
 
 // Sync Farcaster user profiles
