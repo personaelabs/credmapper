@@ -26,14 +26,6 @@ export const syncCreatedDrops = async () => {
       ? BigInt(synchedBlock)
       : BigInt(chainContracts.ZORA_NFT_CREATOR_PROXY.deployedBlock || 0);
 
-    const connectedAddresses = (
-      await prisma.connectedAddress.findMany({
-        select: {
-          address: true,
-        },
-      })
-    ).map((a) => a.address);
-
     const client = getClient(chain);
     await syncContractLogs(
       client,
@@ -52,9 +44,6 @@ export const syncCreatedDrops = async () => {
             editionContractAddress,
             blockNumber: log.blockNumber,
             transactionHash: log.transactionHash,
-            connectedCreator: connectedAddresses.find(
-              (address) => address.toLowerCase() === creator.toLowerCase(),
-            ),
             chain: ToDBChain(chain),
           };
         });

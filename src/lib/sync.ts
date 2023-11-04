@@ -12,6 +12,15 @@ export const linkAddressTraits = async (address: Hex) => {
       to: address,
     },
   });
+
+  await prisma.purchasedEvent.updateMany({
+    data: {
+      connectedAddress: address,
+    },
+    where: {
+      minter: address,
+    },
+  });
 };
 
 export const syncContractLogs = async <T extends Transport, C extends Chain>(

@@ -1,5 +1,5 @@
 import prisma from '../../prisma';
-import { Abi, GetFilterLogsReturnType, Hex } from 'viem';
+import { Abi, GetFilterLogsReturnType, Hex, Transport, Chain, PublicClient } from 'viem';
 import { ToDBChain, chains } from '../../utils';
 import ZoraCreator1155Impl from './abi/ZoraCreator1155Impl.json';
 import ZoraCreator1155FactoryImpl from './abi/ZoraCreator1155FactoryImpl.json';
@@ -86,28 +86,32 @@ export const syncPurchasedEvents = async () => {
     const fromBlock = synchedBlock ? BigInt(synchedBlock) : earliestContractBlockNum;
 
     const processPurchases = async (logs: GetFilterLogsReturnType) => {
-      const data = logs.map((log) => {
-        const contractAddress = log.address.toLowerCase() as Hex;
-        // @ts-ignore
-        const quantity = log.args.quantity;
-        // @ts-ignore
-        const value = log.args.value;
-        // @ts-ignore
-        const tokenId = log.args.tokenId;
-        // @ts-ignore
-        const minter = log.args.minter.toLowerCase() as Hex;
+      const data = await Promise.all(
+        logs.map(async (log) => {
+          const contractAddress = log.address.toLowerCase() as Hex;
+          // @ts-ignore
+          const quantity = log.args.quantity;
+          // @ts-ignore
+          const value = log.args.value;
+          // @ts-ignore
+          const tokenId = log.args.tokenId;
+          // @ts-ignore
+          const minter = log.args.sender.toLowerCase() as Hex;
 
-        return {
-          contractAddress,
-          quantity,
-          minter,
-          value,
-          tokenId,
-          blockNumber: log.blockNumber,
-          transactionHash: log.transactionHash,
-          chain: ToDBChain(chain),
-        };
-      });
+          // Get the image of the token
+
+          return {
+            contractAddress,
+            quantity,
+            minter,
+            value,
+            tokenId,
+            blockNumber: log.blockNumber,
+            transactionHash: log.transactionHash,
+            chain: ToDBChain(chain),
+          };
+        }),
+      );
 
       await prisma.purchasedEvent.createMany({
         data,
@@ -128,4 +132,4 @@ export const syncPurchasedEvents = async () => {
 };
 
 // syncPurchasedEvents();
-syncSetupNewContractEvents();
+// syncSetupNewContractEvents();

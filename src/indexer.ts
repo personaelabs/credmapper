@@ -21,16 +21,26 @@ export const indexMinters = async () => {
       },
     },
     where: {
-      connectedAddresses: {
-        some: {
-          transfers: {
-            some: {},
-          },
-          purchases: {
-            some: {},
+      OR: [
+        {
+          connectedAddresses: {
+            some: {
+              transfers: {
+                some: {},
+              },
+            },
           },
         },
-      },
+        {
+          connectedAddresses: {
+            some: {
+              purchases: {
+                some: {},
+              },
+            },
+          },
+        },
+      ],
     },
   });
 
@@ -49,8 +59,6 @@ export const indexMinters = async () => {
         .flat(),
     ),
   ];
-
-  console.log(`Found ${mintedContracts.length} minted contracts`);
 
   // Get all metadata fr ERC721 Drops
   const erc721Meta = await prisma.metadataUpdateEvent.findMany({
@@ -88,7 +96,7 @@ export const indexMinters = async () => {
     },
   });
 
-  // Transform the data into the format that can be indeed by Algolia
+  // Transform the data into the format that can be indexed by Algolia
   const indexedRecords: IndexedRecord[] = [];
   for (const user of fcMinters) {
     const userMints: Mint[] = [];
@@ -102,7 +110,6 @@ export const indexMinters = async () => {
         const editionMeta = erc721EditionsMeta.find(
           (edition) => edition.contractAddress === contractAddress,
         );
-        const erc1155Meta = erc1155Metadata.find((meta) => meta.newContract === contractAddress);
 
         // If this is a drop, we can get the drop title and image from the metadata
         if (meta) {
@@ -116,31 +123,35 @@ export const indexMinters = async () => {
           });
         } else if (editionMeta) {
           const description = editionMeta.description;
-          if (description.length > 25) {
-            console.log(`Skipping ${editionMeta.contractAddress} because description is too long`);
-          } else {
-            // If this is an edition, we can get the drop title and image from the edition metadata
-            userMints.push({
-              contractAddress: transfer.contractAddress as Hex,
-              minter: transfer.to as Hex,
-              title: editionMeta.description, // There is no name field so we use the description
-              image: editionMeta.imageURI,
-              tokenId: transfer.tokenId.toString(),
-              chain: transfer.chain,
-            });
-          }
-        } else if (erc1155Meta) {
-          // If this is an ERC1155 contract, we can get the drop title and image from the metadata
+          // If this is an edition, we can get the drop title and image from the edition metadata
           userMints.push({
             contractAddress: transfer.contractAddress as Hex,
             minter: transfer.to as Hex,
-            title: erc1155Meta.name,
-            image: erc1155Meta.image,
+            title: editionMeta.description, // There is no name field so we use the description
+            image: editionMeta.imageURI,
             tokenId: transfer.tokenId.toString(),
             chain: transfer.chain,
           });
         } else {
           // console.log(`No metadata found for ${transfer.contractAddress}`);
+        }
+      }
+
+      for (const purchase of address.purchases) {
+        const erc1155Meta = erc1155Metadata.find(
+          (meta) => meta.newContract === purchase.contractAddress,
+        );
+
+        if (erc1155Meta) {
+          // If this is an ERC1155 contract, we can get the drop title and image from the metadata
+          userMints.push({
+            contractAddress: purchase.contractAddress as Hex,
+            minter: purchase.minter as Hex,
+            title: erc1155Meta.name,
+            image: erc1155Meta.image,
+            tokenId: purchase.tokenId.toString(),
+            chain: purchase.chain,
+          });
         }
       }
     }
