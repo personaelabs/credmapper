@@ -6,19 +6,10 @@ export const linkAddressTraits = async (address: Hex) => {
   // Link foreign keys
   await prisma.transferEvent.updateMany({
     data: {
-      connecttedTo: address,
+      connectedAddress: address,
     },
     where: {
       to: address,
-    },
-  });
-
-  await prisma.createDropEvent.updateMany({
-    data: {
-      connectedCreator: address,
-    },
-    where: {
-      creator: address,
     },
   });
 };
@@ -26,7 +17,7 @@ export const linkAddressTraits = async (address: Hex) => {
 export const syncContractLogs = async <T extends Transport, C extends Chain>(
   client: PublicClient<T, C>,
   abi: Abi,
-  contractAddress: Hex | Hex[],
+  contractAddress: Hex | Hex[] | undefined,
   eventName: string,
   fromBlock: bigint,
   saveLogs: (logs: GetFilterLogsReturnType) => Promise<void>,
@@ -43,19 +34,12 @@ export const syncContractLogs = async <T extends Transport, C extends Chain>(
     );
 
     try {
-      const filter = await retry(async () => {
-        return await client.createContractEventFilter({
-          abi,
-          address: contractAddress,
-          eventName,
-          args: {},
-          fromBlock: batchFrom,
-          toBlock: batchFrom + batchSize,
-        });
-      });
-
-      const logs = await retry(async () => {
-        return await client.getFilterLogs({ filter });
+      const logs = await client.getContractEvents({
+        address: contractAddress,
+        eventName,
+        abi,
+        fromBlock: batchFrom,
+        toBlock: batchFrom + batchSize,
       });
 
       await saveLogs(logs);

@@ -1,7 +1,7 @@
 import prisma from '../../prisma';
 import * as ipfs from '../../providers/ipfs';
-import { Abi, Chain, GetFilterLogsReturnType, Hex } from 'viem';
-import { ToViemChain, chains } from '../../utils';
+import { Abi, GetFilterLogsReturnType, Hex } from 'viem';
+import { chains } from '../../utils';
 import ZoraNFTCreatorV1 from './abi/ZoraNFTCreatorV1.json';
 import DropMetadataRenderer from './abi/DropMetadataRenderer.json';
 import ERC721Drop from './abi/ERC721Drop.json';
@@ -212,20 +212,19 @@ export const syncTransfers = async () => {
   for (const chain of syncChains) {
     const chainContracts = contracts(chain);
 
-    const drops = await prisma.createDropEvent.groupBy({
+    const erc721Drops = await prisma.createDropEvent.groupBy({
       by: ['editionContractAddress'],
       _min: {
         blockNumber: true,
       },
       where: {
         chain: ToDBChain(chain),
-        connectedCreator: {
-          not: null,
-        },
       },
     });
 
-    const dropAddresses = drops.map((d) => d.editionContractAddress.toLowerCase() as Hex);
+    const erc721DropAddresses = erc721Drops.map(
+      (d) => d.editionContractAddress.toLowerCase() as Hex,
+    );
 
     const synchedBlock = await getSynchedBlock('Transfer', ToDBChain(chain));
 
@@ -279,7 +278,7 @@ export const syncTransfers = async () => {
     await syncContractLogs(
       getClient(chain),
       ERC721Drop.abi as Abi,
-      dropAddresses,
+      erc721DropAddresses,
       'Transfer',
       fromBlock,
       processTransferLogs,

@@ -1,4 +1,3 @@
-import { isConstructorDeclaration } from 'typescript';
 import prisma from './prisma';
 import { IndexedRecord, Mint, ZoraDrop } from './types';
 import fs from 'fs';
@@ -17,6 +16,7 @@ export const indexMinters = async () => {
               from: '0x0000000000000000000000000000000000000000',
             },
           },
+          purchases: true,
         },
       },
     },
@@ -24,6 +24,9 @@ export const indexMinters = async () => {
       connectedAddresses: {
         some: {
           transfers: {
+            some: {},
+          },
+          purchases: {
             some: {},
           },
         },
@@ -37,15 +40,20 @@ export const indexMinters = async () => {
       fcMinters
         .map((user) =>
           user.connectedAddresses
-            .map((address) => address.transfers.map((transfer) => transfer.contractAddress))
+            .map((address) => [
+              ...address.transfers.map((transfer) => transfer.contractAddress),
+              ...address.purchases.map((purchase) => purchase.contractAddress),
+            ])
             .flat(),
         )
         .flat(),
     ),
   ];
 
-  // Get all metadata fr Drops
-  const dropsMeta = await prisma.metadataUpdateEvent.findMany({
+  console.log(`Found ${mintedContracts.length} minted contracts`);
+
+  // Get all metadata fr ERC721 Drops
+  const erc721Meta = await prisma.metadataUpdateEvent.findMany({
     where: {
       contractAddress: {
         in: mintedContracts,
@@ -56,10 +64,22 @@ export const indexMinters = async () => {
     },
   });
 
-  // get all metadata for Editions
-  const editionsMeta = await prisma.editionInitializedEvent.findMany({
+  // Get all metadata fr ERC721 editions
+  const erc721EditionsMeta = await prisma.editionInitializedEvent.findMany({
     where: {
       contractAddress: {
+        in: mintedContracts,
+      },
+    },
+    orderBy: {
+      blockNumber: 'desc',
+    },
+  });
+
+  // Get all metadata for 1155 contracts
+  const erc1155Metadata = await prisma.setupNewContractEvent.findMany({
+    where: {
+      newContract: {
         in: mintedContracts,
       },
     },
@@ -73,20 +93,24 @@ export const indexMinters = async () => {
   for (const user of fcMinters) {
     const userMints: Mint[] = [];
     for (const address of user.connectedAddresses) {
+      // 1. Process all ERC721 transfers
       for (const transfer of address.transfers) {
         const contractAddress = transfer.contractAddress;
-        const dropMeta = dropsMeta.find((drop) => drop.contractAddress === contractAddress);
-        const editionMeta = editionsMeta.find(
+
+        // Search for the metadata for this contract
+        const meta = erc721Meta.find((drop) => drop.contractAddress === contractAddress);
+        const editionMeta = erc721EditionsMeta.find(
           (edition) => edition.contractAddress === contractAddress,
         );
+        const erc1155Meta = erc1155Metadata.find((meta) => meta.newContract === contractAddress);
 
         // If this is a drop, we can get the drop title and image from the metadata
-        if (dropMeta) {
+        if (meta) {
           userMints.push({
             contractAddress: transfer.contractAddress as Hex,
             minter: transfer.to as Hex,
-            dropTitle: dropMeta.name,
-            dropImage: dropMeta.image,
+            title: meta.name,
+            image: meta.image,
             tokenId: transfer.tokenId.toString(),
             chain: transfer.chain,
           });
@@ -99,12 +123,22 @@ export const indexMinters = async () => {
             userMints.push({
               contractAddress: transfer.contractAddress as Hex,
               minter: transfer.to as Hex,
-              dropTitle: editionMeta.description, // There is no name field so we use the description
-              dropImage: editionMeta.imageURI,
+              title: editionMeta.description, // There is no name field so we use the description
+              image: editionMeta.imageURI,
               tokenId: transfer.tokenId.toString(),
               chain: transfer.chain,
             });
           }
+        } else if (erc1155Meta) {
+          // If this is an ERC1155 contract, we can get the drop title and image from the metadata
+          userMints.push({
+            contractAddress: transfer.contractAddress as Hex,
+            minter: transfer.to as Hex,
+            title: erc1155Meta.name,
+            image: erc1155Meta.image,
+            tokenId: transfer.tokenId.toString(),
+            chain: transfer.chain,
+          });
         } else {
           // console.log(`No metadata found for ${transfer.contractAddress}`);
         }

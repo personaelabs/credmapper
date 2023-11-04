@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "PurchasedEvent" ALTER COLUMN "quantity" SET DATA TYPE BIGINT,
+ALTER COLUMN "value" SET DATA TYPE BIGINT;

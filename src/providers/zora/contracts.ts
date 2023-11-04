@@ -16,6 +16,10 @@ const contracts = (
     address: Hex;
     deployedBlock?: number;
   };
+  ERC1155_FACTORY_PROXY?: {
+    address: Hex;
+    deployedBlock?: number;
+  };
 } => {
   switch (chain) {
     case chains.base:
@@ -27,6 +31,9 @@ const contracts = (
         DROP_METADATA_RENDERER: {
           address: '0xF77330C8b1c41f2e44470763Cf9E3ACa78Db4381',
           deployedBlock: 1461347,
+        },
+        ERC1155_FACTORY_PROXY: {
+          address: '0x777777C338d93e2C7adf08D102d45CA7CC4Ed021',
         },
       };
     case chains.mainnet:
@@ -54,6 +61,9 @@ const contracts = (
           address: '0xa2a7D8bcE0bf58D177137ECB94f3Fa6aA06aA7A1',
           deployedBlock: 97155826,
         },
+        ERC1155_FACTORY_PROXY: {
+          address: '0x777777C338d93e2C7adf08D102d45CA7CC4Ed021',
+        },
       };
     /*
       case chains.PGN:
@@ -79,6 +89,10 @@ const contracts = (
         EDITION_METADATA_RENDERER: {
           address: '0xCA7bF48453B72e4E175267127B4Ed7EB12F83b93',
           deployedBlock: 46799,
+        },
+        ERC1155_FACTORY_PROXY: {
+          address: '0x777777C338d93e2C7adf08D102d45CA7CC4Ed021',
+          deployedBlock: 4664191,
         },
       };
   }

@@ -4,6 +4,8 @@ import {
   syncCreatedDrops,
   syncEditionInitialized,
   syncMetadataUpdated,
+  syncPurchasedEvents,
+  syncSetupNewContractEvents,
   syncTransfers,
 } from './providers/zora';
 import { linkAddressTraits } from './lib/sync';
@@ -105,13 +107,17 @@ const linkAllAddressTraits = async () => {
 };
 
 const sync = async () => {
+  // 721 contracts
   await syncCreatedDrops();
   await syncMetadataUpdated();
   await syncTransfers();
   await syncEditionInitialized();
 
-  await syncUsers();
+  // 1155 contracts
+  await syncSetupNewContractEvents();
+  await syncPurchasedEvents();
 
+  await syncUsers();
   await syncConnectedAddresses();
 
   // Link all the traits indexed by the above functions

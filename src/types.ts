@@ -31,9 +31,9 @@ export interface DuneTransactionRow {
 }
 
 export interface ZoraNFTMetadata {
-  name: string;
-  description: string;
-  image: string;
+  name?: string;
+  description?: string;
+  image?: string;
 }
 
 export interface ZoraDrop {
