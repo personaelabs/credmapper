@@ -20,7 +20,7 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
   // Get the latest block number
   const latestBlock = await client.getBlockNumber();
 
-  for (let batchFrom = fromBlock + BigInt(1); batchFrom < latestBlock; batchFrom += batchSize) {
+  for (let batchFrom = fromBlock; batchFrom < latestBlock; batchFrom += batchSize) {
     console.log(
       `Sync: ${eventName} (${
         client.chain.name
