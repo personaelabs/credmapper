@@ -6,7 +6,8 @@
     "db:start": "docker-compose up -d && sleep 1 && pnpm migrate:dev",
     "migrate:dev": "pnpm exec prisma migrate dev",
     "sync": "pnpm ts-node ./src/sync.ts",
-    "index": "pnpm ts-node ./src/index.ts"
+    "index": "pnpm ts-node ./src/index.ts",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
