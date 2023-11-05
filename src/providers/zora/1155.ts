@@ -2,7 +2,7 @@ import prisma from '../../prisma';
 import { Abi, GetFilterLogsReturnType, Hex } from 'viem';
 import ZoraCreator1155Impl from './abi/ZoraCreator1155Impl.json';
 import ZoraCreator1155FactoryImpl from './abi/ZoraCreator1155FactoryImpl.json';
-import { syncContractLogs } from '../../lib/syncLogs';
+import { syncContractLogs, syncLogs } from '../../lib/syncLogs';
 import contracts from './contracts';
 import { getClient } from '../ethRpc';
 import { getSynchedBlock } from '../../lib/syncInfo';
@@ -60,7 +60,7 @@ export const syncSetupNewContractEvents = async () => {
   await syncContractLogs(
     client,
     ZoraCreator1155FactoryImpl as Abi,
-    chainContracts.ERC1155_FACTORY_PROXY?.address.toLowerCase() as Hex,
+    chainContracts.ERC1155_FACTORY_PROXY.address.toLowerCase() as Hex,
     'SetupNewContract',
     fromBlock,
     processNewContracts,
@@ -68,18 +68,13 @@ export const syncSetupNewContractEvents = async () => {
 };
 
 export const syncPurchasedEvents = async () => {
-  // Get synched token contracts
-  const newContractEvents = await prisma.setupNewContractEvent.findMany({
-    select: {
-      newContract: true,
-      blockNumber: true,
-    },
-  });
-  const contractAddresses = newContractEvents.map((e) => e.newContract as Hex);
   const synchedBlock = await getSynchedBlock('Purchased', Chain.Zora);
 
-  const earliestContractBlockNum = newContractEvents.map((e) => BigInt(e.blockNumber)).sort()[0];
-  const fromBlock = synchedBlock ? BigInt(synchedBlock) : earliestContractBlockNum;
+  const chainContracts = contracts(chains.zora);
+
+  const fromBlock = synchedBlock
+    ? BigInt(synchedBlock)
+    : BigInt(chainContracts.ERC1155_FACTORY_PROXY.deployedBlock || 0);
 
   const processPurchases = async (logs: GetFilterLogsReturnType) => {
     const data = await Promise.all(
@@ -116,11 +111,41 @@ export const syncPurchasedEvents = async () => {
   };
 
   const client = getClient(chains.zora);
-  await syncContractLogs(
+  await syncLogs(
     client,
-    ZoraCreator1155Impl.abi as Abi,
-    contractAddresses,
     'Purchased',
+    [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'sender',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'minter',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'tokenId',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'quantity',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'value',
+        type: 'uint256',
+      },
+    ],
     fromBlock,
     processPurchases,
   );

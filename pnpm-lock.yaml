@@ -27,8 +27,8 @@ dependencies:
     specifier: ^5.2.2
     version: 5.2.2
   viem:
-    specifier: ^1.18.2
-    version: 1.18.2(typescript@5.2.2)
+    specifier: ^1.18.4
+    version: 1.18.4(typescript@5.2.2)
 
 packages:
 
@@ -304,8 +304,8 @@ packages:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
     dev: false
 
-  /viem@1.18.2(typescript@5.2.2):
-    resolution: {integrity: sha512-ifobXCKwzztmjHbHowAWqTASO6tAqF6udKB9ONXkJQU1cmt830MABiMwJGtTO9Gb9ION1N+324G7nHDbpPn4wg==}
+  /viem@1.18.4(typescript@5.2.2):
+    resolution: {integrity: sha512-im+y30k+IGT6VtfD/q1V0RX5PaiHPsFTHkKqvTjTqV+ZT8RgJXzOGPXr5E0uPIm2cbJAJp6A9nR9BCHY7BKR2Q==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
