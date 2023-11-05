@@ -1,6 +1,6 @@
 import { syncUsers } from './providers/farcaster';
 import prisma from './prisma';
-import { syncPurchasedEvents, syncSetupNewContractEvents } from './providers/zora';
+import { sync1155Tokens, syncPurchasedEvents } from './providers/zora';
 import { Hex } from 'viem';
 import { batchRun } from './utils';
 
@@ -89,8 +89,8 @@ const linkAddressTraits = async () => {
 const sync = async () => {
   console.time('Sync time');
   // 1155 contracts
-  await syncSetupNewContractEvents();
   await syncPurchasedEvents();
+  await sync1155Tokens();
 
   // Sync Farcaster users
   await syncUsers();

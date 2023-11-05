@@ -14,21 +14,6 @@ enum Chain {
   Zora
 }
 
-model SetupNewContractEvent {
-  transactionHash String   @id
-  blockNumber     BigInt
-  newContract     String
-  creator         String
-  defaultAdmin    String
-  contractURI     String
-  name            String
-  description     String
-  image           String
-  chain           Chain
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
 model PurchasedEvent {
   transactionHash String @id
   blockNumber     BigInt
@@ -91,4 +76,18 @@ model LinkInfo {
   latestLinkTime DateTime
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model ERC1155Token {
+  contractAddress String
+  tokenId         BigInt
+  name            String
+  description     String
+  image           String
+  animation       String?
+  chain           Chain
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([contractAddress, tokenId])
 }

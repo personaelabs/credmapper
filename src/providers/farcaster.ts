@@ -257,6 +257,20 @@ export const syncUsers = async () => {
     // When no hub events have been processed yet, sync all users
     await getAllUsers();
     await getAllConnectedAddresses();
+
+    const result = await queryHubble<HubEventsResponse>('events', {});
+    await prisma.hubEventsSyncInfo.upsert({
+      where: {
+        eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
+      },
+      update: {
+        synchedEventId: result.nextPageEventId,
+      },
+      create: {
+        eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
+        synchedEventId: result.nextPageEventId,
+      },
+    });
   } else {
     // The latest event ID that has been processed
     let nextPageEventId = latestEvent?.synchedEventId || 0;

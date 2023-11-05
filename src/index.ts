@@ -40,14 +40,11 @@ export const indexMinters = async () => {
   ];
 
   // Get all metadata for 1155 contracts
-  const erc1155Metadata = await prisma.setupNewContractEvent.findMany({
+  const erc1155Metadata = await prisma.eRC1155Token.findMany({
     where: {
-      newContract: {
+      contractAddress: {
         in: mintedContracts,
       },
-    },
-    orderBy: {
-      blockNumber: 'desc',
     },
   });
 
@@ -58,7 +55,7 @@ export const indexMinters = async () => {
     for (const address of user.connectedAddresses) {
       for (const purchase of address.purchases) {
         const erc1155Meta = erc1155Metadata.find(
-          (meta) => meta.newContract === purchase.contractAddress,
+          (meta) => meta.contractAddress === purchase.contractAddress,
         );
 
         if (erc1155Meta) {

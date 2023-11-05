@@ -7,12 +7,7 @@ import { Chain as DBChain } from '@prisma/client';
 export const syncLogs = async <T extends Transport, C extends Chain>(
   client: PublicClient<T, C>,
   eventName: string,
-  eventInputs: {
-    indexed: boolean;
-    internalType: string;
-    name: string;
-    type: string;
-  }[],
+  eventInputs: any,
   fromBlock: bigint,
   saveLogs: (logs: GetFilterLogsReturnType) => Promise<void>,
   batchSize: bigint = BigInt(10000),

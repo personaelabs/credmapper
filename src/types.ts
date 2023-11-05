@@ -66,6 +66,12 @@ export interface ZoraNFTMetadata {
   name?: string;
   description?: string;
   image?: string;
+  animation_url?: string;
+}
+
+export interface ZoraNFT extends ZoraNFTMetadata {
+  contractAddress: string;
+  tokenId: bigint;
 }
 
 export interface ZoraDrop {
