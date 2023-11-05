@@ -7,7 +7,7 @@
     "migrate:dev": "pnpm exec prisma migrate dev",
     "sync": "pnpm ts-node ./src/sync.ts",
     "index": "pnpm ts-node ./src/index.ts",
-    "check": "tsc --noEmit"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
