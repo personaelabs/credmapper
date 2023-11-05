@@ -1,5 +1,3 @@
-import { Chain as DBChain } from '@prisma/client';
-import { Chain } from 'viem';
 import * as _chains from 'viem/chains';
 
 export const sleep = (ms: number) => {
@@ -24,4 +22,17 @@ export const retry = async <T>(fn: () => Promise<T>, retries = 5, interval = 100
   }
 
   throw error;
+};
+
+export const batchRun = async <T>(
+  fn: (params: T[]) => Promise<void>,
+  params: T[],
+  operationLabel: string = '',
+  batchSize: number = 100,
+) => {
+  for (let i = 0; i < params.length; i += batchSize) {
+    console.log(`${operationLabel} ${i}/${params.length}`);
+    const batch = params.slice(i, i + batchSize);
+    await fn(batch);
+  }
 };

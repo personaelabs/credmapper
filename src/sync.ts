@@ -1,8 +1,9 @@
-import { batchRun, getConnectedAddresses, getFIDs, getUserProfile } from './providers/farcaster';
+import { getConnectedAddresses, getFIDs, getUserProfile } from './providers/farcaster';
 import prisma from './prisma';
 import { syncPurchasedEvents, syncSetupNewContractEvents } from './providers/zora';
 import { linkAddressTraits } from './lib/linkTraits';
 import { Hex } from 'viem';
+import { batchRun } from './utils';
 
 // Sync Farcaster user profiles
 const syncUsers = async () => {

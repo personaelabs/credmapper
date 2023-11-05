@@ -69,19 +69,6 @@ export const batchQueryHubble = async <T>(
   return responses;
 };
 
-export const batchRun = async <T>(
-  fn: (params: T[]) => Promise<void>,
-  params: T[],
-  operationLabel: string = '',
-  batchSize: number = 100,
-) => {
-  for (let i = 0; i < params.length; i += batchSize) {
-    console.log(`${operationLabel} ${i}/${params.length}`);
-    const batch = params.slice(i, i + batchSize);
-    await fn(batch);
-  }
-};
-
 export const getConnectedAddresses = async (fid: number): Promise<Hex[]> => {
   const { messages } = await queryHubble<VerificationsByFidResponse>('verificationsByFid', {
     fid: fid.toString(),
