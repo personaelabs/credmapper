@@ -32,6 +32,23 @@ model PurchasedEvent {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
+model TransferEvent {
+  transactionHash String @id
+  blockNumber     BigInt
+  from            String
+  to              String
+  tokenId         String
+  contractAddress String
+  chain           Chain
+
+  // Optional foreign key
+  transferToConnectedAddress ConnectedAddress? @relation(fields: [connectedAddress], references: [address])
+  connectedAddress           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 model User {
   fid                Int                @id
   fcUsername         String?
@@ -52,6 +69,7 @@ model ConnectedAddress {
   userFid Int?
 
   purchases PurchasedEvent[]
+  transfers TransferEvent[]
 }
 
 model HubEventsSyncInfo {
@@ -76,6 +94,20 @@ model LinkInfo {
   latestLinkTime DateTime
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model ERC721Token {
+  contractAddress String
+  tokenId         String
+  name            String
+  description     String
+  image           String
+  animation       String?
+  chain           Chain
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([contractAddress, tokenId])
 }
 
 model ERC1155Token {

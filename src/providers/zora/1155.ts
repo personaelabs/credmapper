@@ -10,6 +10,8 @@ import { Chain } from '@prisma/client';
 import * as chains from 'viem/chains';
 import { batchRun } from '../../utils';
 
+// Sync metadata of 1155 tokens minted by Farcaster users.
+// (We don't sync metadata of 1155 tokens that haven't been minted by Farcaster users)
 export const sync1155Tokens = async () => {
   const client = getClient(chains.zora);
   const synchedBlock = (await getSynchedBlock('ERC1155Token', Chain.Zora)) || BigInt(0);
@@ -107,6 +109,7 @@ export const sync1155Tokens = async () => {
   );
 };
 
+// Sync `Purchased` events from 1155 contracts
 export const syncPurchasedEvents = async () => {
   const synchedBlock = await getSynchedBlock('Purchased', Chain.Zora);
 

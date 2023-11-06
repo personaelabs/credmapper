@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ERC721Token" ALTER COLUMN "tokenId" SET DATA TYPE TEXT;

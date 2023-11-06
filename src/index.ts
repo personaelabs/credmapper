@@ -12,19 +12,39 @@ export const indexMinters = async () => {
       connectedAddresses: {
         include: {
           purchases: true,
-        },
-      },
-    },
-    where: {
-      connectedAddresses: {
-        some: {
-          purchases: {
-            some: {},
+          transfers: {
+            where: {
+              from: '0x0000000000000000000000000000000000000000',
+            },
           },
         },
       },
     },
+    where: {
+      OR: [
+        {
+          connectedAddresses: {
+            some: {
+              purchases: {
+                some: {},
+              },
+            },
+          },
+        },
+        {
+          connectedAddresses: {
+            some: {
+              transfers: {
+                some: {},
+              },
+            },
+          },
+        },
+      ],
+    },
   });
+
+  console.log(`Found ${fcMinters.length} Farcaster minters`);
 
   // Get all contracts that have been minted to
   const mintedContracts = [
@@ -32,15 +52,28 @@ export const indexMinters = async () => {
       fcMinters
         .map((user) =>
           user.connectedAddresses
-            .map((address) => [...address.purchases.map((purchase) => purchase.contractAddress)])
+            .map((address) => [
+              ...address.purchases.map((purchase) => purchase.contractAddress),
+              ...address.transfers.map((transfer) => transfer.contractAddress),
+            ])
             .flat(),
         )
         .flat(),
     ),
   ];
 
+  console.log(`Found ${mintedContracts.length} minted contracts`);
+
   // Get all metadata for 1155 contracts
   const erc1155Metadata = await prisma.eRC1155Token.findMany({
+    where: {
+      contractAddress: {
+        in: mintedContracts,
+      },
+    },
+  });
+
+  const erc721Metadata = await prisma.eRC721Token.findMany({
     where: {
       contractAddress: {
         in: mintedContracts,
@@ -58,6 +91,10 @@ export const indexMinters = async () => {
           (meta) => meta.contractAddress === purchase.contractAddress,
         );
 
+        const erc721Meta = erc721Metadata.find(
+          (meta) => meta.contractAddress === purchase.contractAddress,
+        );
+
         if (erc1155Meta) {
           // If this is an ERC1155 contract, we can get the drop title and image from the metadata
           userMints.push({
@@ -65,6 +102,16 @@ export const indexMinters = async () => {
             minter: purchase.minter as Hex,
             title: erc1155Meta.name,
             image: erc1155Meta.image,
+            tokenId: purchase.tokenId.toString(),
+            chain: purchase.chain,
+          });
+        } else if (erc721Meta) {
+          // If this is an ERC721 contract, we can get the drop title and image from the metadata
+          userMints.push({
+            contractAddress: purchase.contractAddress as Hex,
+            minter: purchase.minter as Hex,
+            title: erc721Meta.name,
+            image: erc721Meta.image,
             tokenId: purchase.tokenId.toString(),
             chain: purchase.chain,
           });

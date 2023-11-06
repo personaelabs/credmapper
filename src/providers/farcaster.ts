@@ -246,6 +246,7 @@ const getAllConnectedAddresses = async () => {
   );
 };
 
+// Sync Farcaster users
 export const syncUsers = async () => {
   const latestEvent = await prisma.hubEventsSyncInfo.findFirst({
     select: {
@@ -255,10 +256,12 @@ export const syncUsers = async () => {
 
   if (!latestEvent) {
     // When no hub events have been processed yet, sync all users
-    await getAllUsers();
+    // await getAllUsers();
     await getAllConnectedAddresses();
 
-    const result = await queryHubble<HubEventsResponse>('events', {});
+    const result = await queryHubble<HubEventsResponse>('events', {
+      reverse: '1',
+    });
     await prisma.hubEventsSyncInfo.upsert({
       where: {
         eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
