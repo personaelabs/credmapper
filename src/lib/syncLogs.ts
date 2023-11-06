@@ -1,22 +1,21 @@
-import { Abi, Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'viem';
+import { Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'viem';
 import prisma from '../prisma';
 import { Chain as DBChain } from '@prisma/client';
+import { getClient } from '../providers/ethRpc';
 
 // Sync logs for a specific event.
 // Use `syncContractLogs` to sync logs for a specific contract.
 export const syncLogs = async <T extends Transport, C extends Chain>(
-  client: PublicClient<T, C>,
+  chain: DBChain,
   eventName: string,
-  eventInputs: {
-    indexed: boolean;
-    internalType: string;
-    name: string;
-    type: string;
-  }[],
+  eventInputs: any,
   fromBlock: bigint,
   saveLogs: (logs: GetFilterLogsReturnType) => Promise<void>,
+  contractAddress?: Hex | Hex[],
   batchSize: bigint = BigInt(10000),
 ) => {
+  const client = getClient(chain);
+
   // Get the latest block number
   const latestBlock = await client.getBlockNumber();
 
@@ -29,6 +28,7 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
 
     try {
       const logs = await client.getLogs({
+        address: contractAddress,
         event: {
           inputs: eventInputs,
           name: eventName,
@@ -36,6 +36,9 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
         },
         fromBlock: batchFrom,
         toBlock: batchFrom + batchSize,
+        args: {
+          from: '0x0000000000000000000000000000000000000000',
+        },
       });
 
       await saveLogs(logs);
@@ -44,7 +47,7 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
         where: {
           eventName_chain: {
             eventName,
-            chain: DBChain.Zora,
+            chain,
           },
         },
         update: {
@@ -52,63 +55,7 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
         },
         create: {
           eventName,
-          chain: DBChain.Zora,
-          synchedBlock: batchFrom + batchSize,
-        },
-      });
-    } catch (err) {
-      console.log(
-        `Failed to fetch ${eventName} events from ${batchFrom} to ${batchFrom + batchSize}`,
-      );
-      console.log(err);
-    }
-  }
-};
-
-// Sync logs for a specific contract or multiple contracts.
-export const syncContractLogs = async <T extends Transport, C extends Chain>(
-  client: PublicClient<T, C>,
-  abi: Abi,
-  contractAddress: Hex | Hex[] | undefined,
-  eventName: string,
-  fromBlock: bigint,
-  saveLogs: (logs: GetFilterLogsReturnType) => Promise<void>,
-  batchSize: bigint = BigInt(10000),
-) => {
-  // Get the latest block number
-  const latestBlock = await client.getBlockNumber();
-
-  for (let batchFrom = fromBlock + BigInt(1); batchFrom < latestBlock; batchFrom += batchSize) {
-    console.log(
-      `Sync: ${eventName} (${
-        client.chain.name
-      }) ${batchFrom.toLocaleString()}/${latestBlock.toLocaleString()}`,
-    );
-
-    try {
-      const logs = await client.getContractEvents({
-        address: contractAddress,
-        eventName,
-        abi,
-        fromBlock: batchFrom,
-        toBlock: batchFrom + batchSize,
-      });
-
-      await saveLogs(logs);
-
-      await prisma.syncInfo.upsert({
-        where: {
-          eventName_chain: {
-            eventName,
-            chain: DBChain.Zora,
-          },
-        },
-        update: {
-          synchedBlock: batchFrom + batchSize,
-        },
-        create: {
-          eventName,
-          chain: DBChain.Zora,
+          chain,
           synchedBlock: batchFrom + batchSize,
         },
       });

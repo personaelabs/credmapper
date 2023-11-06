@@ -1,9 +1,13 @@
 import { syncUsers } from './providers/farcaster';
 import prisma from './prisma';
-import { syncPurchasedEvents, syncSetupNewContractEvents } from './providers/zora';
+import { sync1155Tokens, syncPurchasedEvents } from './providers/zora';
 import { Hex } from 'viem';
 import { batchRun } from './utils';
+import { sync721Tokens, syncTransferEvents } from './providers/zora/721';
+import { Chain } from '@prisma/client';
 
+// Link the traits indexed by the above functions
+// to the Farcaster addresses
 const linkAddressTraits = async () => {
   // Get the latest link time
   const linkInfo = await prisma.linkInfo.findFirst();
@@ -17,9 +21,13 @@ const linkAddressTraits = async () => {
       },
     });
   } else {
+    const connectedAddresses = (await prisma.connectedAddress.findMany()).map((a) => a.address);
+
     const unlinkedPurchases = await prisma.purchasedEvent.findMany({
       where: {
-        connectedAddress: null,
+        minter: {
+          in: connectedAddresses,
+        },
         updatedAt: {
           gte: linkInfo.latestLinkTime,
         },
@@ -29,13 +37,30 @@ const linkAddressTraits = async () => {
       },
     });
 
+    const unlinkedTransfers = await prisma.transferEvent.findMany({
+      where: {
+        to: {
+          in: connectedAddresses,
+        },
+        updatedAt: {
+          gte: linkInfo.latestLinkTime,
+        },
+      },
+      select: {
+        to: true,
+      },
+    });
+
     // Get all addresses that might have new links since the last link time
     addresses = await prisma.connectedAddress.findMany({
       where: {
         OR: [
           {
             address: {
-              in: unlinkedPurchases.map((p) => p.minter),
+              in: [
+                ...unlinkedPurchases.map((p) => p.minter),
+                ...unlinkedTransfers.map((t) => t.to),
+              ] as Hex[],
             },
           },
           {
@@ -64,6 +89,15 @@ const linkAddressTraits = async () => {
               minter: address,
             },
           });
+
+          await prisma.transferEvent.updateMany({
+            data: {
+              connectedAddress: address,
+            },
+            where: {
+              to: address,
+            },
+          });
         }),
       );
     },
@@ -86,18 +120,34 @@ const linkAddressTraits = async () => {
   });
 };
 
+const syncEthereum = async () => {
+  const chain = Chain.Ethereum;
+  await syncTransferEvents(chain, [
+    '0xca21d4228cdcc68d4e23807e5e370c07577dd152', // Zorbs
+    '0x6339e5e072086621540d0362c4e3cea0d643e114', // Opepen Edition
+    '0x9d90669665607f08005cae4a7098143f554c59ef', // Stand with crypto
+  ] as Hex[]);
+  await sync721Tokens(chain);
+};
+
+// We only go through hand-picked contracts on Ethereum
+const syncZora = async () => {
+  const chain = Chain.Zora;
+  await syncPurchasedEvents(chain);
+  await syncTransferEvents(chain);
+  await sync1155Tokens(chain);
+  await sync721Tokens(chain);
+};
+
 const sync = async () => {
   console.time('Sync time');
-  // 1155 contracts
-  await syncSetupNewContractEvents();
-  await syncPurchasedEvents();
 
-  // Sync Farcaster users
-  await syncUsers();
+  // await syncUsers();
+  await syncEthereum();
+  await syncZora();
 
-  // Link the traits indexed by the above functions
-  // to the Farcaster addresses
   await linkAddressTraits();
+
   console.timeEnd('Sync time');
 };
 

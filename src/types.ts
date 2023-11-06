@@ -66,6 +66,12 @@ export interface ZoraNFTMetadata {
   name?: string;
   description?: string;
   image?: string;
+  animation_url?: string;
+}
+
+export interface ZoraNFT extends ZoraNFTMetadata {
+  contractAddress: string;
+  tokenId: bigint | string;
 }
 
 export interface ZoraDrop {
@@ -76,18 +82,12 @@ export interface ZoraDrop {
 
 // Mint of a Drop or an Edition
 export interface Mint {
-  contractAddress: Hex;
-  minter: Hex;
-  tokenId?: string;
   title: string;
-  image: string;
-  chain: Chain;
 }
 
 export interface IndexedRecord {
   fid: string;
   username: string;
-  bio: string;
   displayName: string;
   pfp: string;
   mints: Mint[];

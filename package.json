@@ -15,6 +15,7 @@
   "dependencies": {
     "@prisma/client": "5.5.2",
     "@types/node": "^20.8.10",
+    "alchemy-sdk": "^2.10.1",
     "axios": "^1.6.0",
     "dotenv": "^16.3.1",
     "prisma": "^5.5.2",

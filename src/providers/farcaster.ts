@@ -12,12 +12,15 @@ import { Hex } from 'viem';
 import { batchRun, retry } from '../utils';
 import prisma from '../prisma';
 
-const HUBBLE_URL = 'http://127.0.0.01:2281/v1';
+const HUBBLE_URL = process.env.HUBBLE_URL || 'http://127.0.0.01:2281/v1';
+
+console.log('Hubble URL:', HUBBLE_URL);
 
 const queryHubble = async <T>(method: string, params: { [key: string]: string }): Promise<T> => {
   return await retry(async () => {
     const { data } = await axios.get(`${HUBBLE_URL}/${method}`, {
       params,
+      //      headers: { accept: 'application/json', api_key: process.env.NEYNAR_API_KEY },
     });
 
     return data;
@@ -246,6 +249,7 @@ const getAllConnectedAddresses = async () => {
   );
 };
 
+// Sync Farcaster users
 export const syncUsers = async () => {
   const latestEvent = await prisma.hubEventsSyncInfo.findFirst({
     select: {
@@ -257,6 +261,20 @@ export const syncUsers = async () => {
     // When no hub events have been processed yet, sync all users
     await getAllUsers();
     await getAllConnectedAddresses();
+
+    const result = await queryHubble<HubEventsResponse>('events', {});
+    await prisma.hubEventsSyncInfo.upsert({
+      where: {
+        eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
+      },
+      update: {
+        synchedEventId: result.nextPageEventId,
+      },
+      create: {
+        eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
+        synchedEventId: result.nextPageEventId,
+      },
+    });
   } else {
     // The latest event ID that has been processed
     let nextPageEventId = latestEvent?.synchedEventId || 0;
