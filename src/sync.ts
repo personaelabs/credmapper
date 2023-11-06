@@ -28,9 +28,6 @@ const linkAddressTraits = async () => {
         minter: {
           in: connectedAddresses,
         },
-        updatedAt: {
-          gte: linkInfo.latestLinkTime,
-        },
       },
       select: {
         minter: true,
@@ -42,9 +39,6 @@ const linkAddressTraits = async () => {
         to: {
           in: connectedAddresses,
         },
-        updatedAt: {
-          gte: linkInfo.latestLinkTime,
-        },
       },
       select: {
         to: true,
@@ -54,21 +48,12 @@ const linkAddressTraits = async () => {
     // Get all addresses that might have new links since the last link time
     addresses = await prisma.connectedAddress.findMany({
       where: {
-        OR: [
-          {
-            address: {
-              in: [
-                ...unlinkedPurchases.map((p) => p.minter),
-                ...unlinkedTransfers.map((t) => t.to),
-              ] as Hex[],
-            },
-          },
-          {
-            createdAt: {
-              gte: linkInfo.latestLinkTime,
-            },
-          },
-        ],
+        address: {
+          in: [
+            ...unlinkedPurchases.map((p) => p.minter),
+            ...unlinkedTransfers.map((t) => t.to),
+          ] as Hex[],
+        },
       },
       select: {
         address: true,
@@ -134,7 +119,7 @@ const syncEthereum = async () => {
 const syncZora = async () => {
   const chain = Chain.Zora;
   await syncPurchasedEvents(chain);
-  await syncTransferEvents(chain);
+  // await syncTransferEvents(chain);
   await sync1155Tokens(chain);
   await sync721Tokens(chain);
 };
@@ -143,7 +128,7 @@ const sync = async () => {
   console.time('Sync time');
 
   // await syncUsers();
-  await syncEthereum();
+  // await syncEthereum();
   await syncZora();
 
   await linkAddressTraits();

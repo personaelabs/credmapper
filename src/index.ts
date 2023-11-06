@@ -73,7 +73,7 @@ export const indexMinters = async () => {
     },
   });
 
-  const erc721Metadata = await prisma.eRC721Token.findMany({
+  const erc721Metadata = await prisma.eRC721Metadata.findMany({
     where: {
       contractAddress: {
         in: mintedContracts,
@@ -102,8 +102,7 @@ export const indexMinters = async () => {
 
       for (const transfer of address.transfers) {
         const erc721Meta = erc721Metadata.find(
-          (meta) =>
-            meta.contractAddress === transfer.contractAddress && meta.tokenId === transfer.tokenId,
+          (meta) => meta.contractAddress === transfer.contractAddress,
         );
 
         if (erc721Meta) {

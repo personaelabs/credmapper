@@ -69,6 +69,12 @@ export interface ZoraNFTMetadata {
   animation_url?: string;
 }
 
+export interface ERC721Metadata {
+  contractAddress: string;
+  name: string;
+  chain: Chain;
+}
+
 export interface ZoraNFT extends ZoraNFTMetadata {
   contractAddress: string;
   tokenId: bigint | string;

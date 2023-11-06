@@ -3,13 +3,10 @@ import { getSynchedBlock } from '../../lib/syncInfo';
 import prisma from '../../prisma';
 import { Abi, GetFilterLogsReturnType, Hex } from 'viem';
 import { getClient } from '../ethRpc';
-import * as chains from 'viem/chains';
 import { syncLogs } from '../../lib/syncLogs';
-import { ZoraNFT, ZoraNFTMetadata } from '../../types';
+import { ERC721Metadata } from '../../types';
 import { batchRun } from '../../utils';
 import ERC721 from './abi/ERC721.json';
-import * as ipfs from '../../providers/ipfs';
-import axios from 'axios';
 
 // Sync metadata of 721 tokens minted by Farcaster users.
 // (We don't sync metadata of 721 tokens that haven't been minted by Farcaster users)
@@ -24,16 +21,11 @@ export const sync721Tokens = async (chain: Chain) => {
     })
   ).map((a) => a.address) as Hex[];
 
-  const synchedBlock = (await getSynchedBlock('ERC721Token', chain)) || BigInt(0);
-
   const contracts = await prisma.transferEvent.groupBy({
     where: {
       chain,
       to: {
         in: connectedAddress,
-      },
-      blockNumber: {
-        gte: synchedBlock,
       },
     },
     by: ['contractAddress'],
@@ -45,51 +37,27 @@ export const sync721Tokens = async (chain: Chain) => {
         await Promise.all(
           batch.map(async (contract) => {
             try {
-              const uri = (await client.readContract({
+              const name = (await client.readContract({
                 address: contract.contractAddress as Hex,
                 abi: ERC721 as Abi,
-                functionName: 'contractURI',
+                functionName: 'name',
               })) as string;
 
-              // Some tokens have their metadata directly stored as base64 strings
-              if (uri.includes('base64')) {
-                const decoded = atob(uri.split(',')[1]);
-                return JSON.parse(decoded);
-              } else if (uri.includes('https://metadata')) {
-                const { data } = await axios.get(uri);
-
-                return {
-                  name: data.name,
-                  description: data.description,
-                  image: data.image,
-                  animation: data.animation_url,
-                  contractAddress: contract.contractAddress,
-                };
-              } else {
-                const data = await ipfs.get<ZoraNFTMetadata>(
-                  uri.replace('ipfs://', '').replace('https://ipfs.io/ipfs/', '').split('?')[0],
-                );
-
-                return {
-                  name: data.name,
-                  description: data.description,
-                  image: data.image,
-                  contractAddress: contract.contractAddress,
-                };
-              }
+              return {
+                name,
+                contractAddress: contract.contractAddress,
+              };
             } catch (err) {
               console.log(err);
             }
           }),
         )
-      ).filter((data) => data) as ZoraNFT[];
+      ).filter((data) => data) as ERC721Metadata[];
 
-      await prisma.eRC721Contract.createMany({
+      await prisma.eRC721Metadata.createMany({
         data: nfts.map((data, i) => ({
           contractAddress: batch[i].contractAddress,
           name: data.name || '',
-          description: data.description || '',
-          image: data.image || '',
           chain: chain,
         })),
         skipDuplicates: true,

@@ -101,11 +101,9 @@ model LinkInfo {
   updatedAt      DateTime @updatedAt
 }
 
-model ERC721Contract {
+model ERC721Metadata {
   contractAddress String @id
   name            String
-  description     String
-  image           String
   chain           Chain
 
   createdAt DateTime @default(now())
