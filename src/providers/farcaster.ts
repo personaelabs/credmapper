@@ -1,8 +1,16 @@
 import 'dotenv/config';
 import axios from 'axios';
-import { VerificationsByFidResponse, UserProfile, FidsResponse } from '../types';
+import {
+  VerificationsByFidResponse,
+  UserProfile,
+  FidsResponse,
+  HubEventsResponse,
+  MergeMessageBody,
+  HubEvent,
+} from '../types';
 import { Hex } from 'viem';
-import { retry } from '../utils';
+import { batchRun, retry } from '../utils';
+import prisma from '../prisma';
 
 const HUBBLE_URL = 'http://127.0.0.01:2281/v1';
 
@@ -74,12 +82,6 @@ export const getConnectedAddresses = async (fid: number): Promise<Hex[]> => {
     fid: fid.toString(),
   });
 
-  for (const message of messages) {
-    if (message.data.type !== 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS') {
-      console.log(message);
-    }
-  }
-
   const connectedAddresses = messages.map((m) => m.data.verificationAddEthAddressBody.address);
 
   return connectedAddresses;
@@ -132,4 +134,183 @@ export const getUserProfile = async (fid: number): Promise<UserProfile | null> =
     bio: profile.bio || null,
     username: profile.username || null,
   };
+};
+
+const FC_TIMESTAMP_START = new Date('2021-01-01T00:00:00Z').getTime() / 1000;
+
+// Convert Farcaster timestamp to Unix timestamp in milliseconds
+const toUnixTimestamp = (fcTimestamp: number): number => {
+  return (FC_TIMESTAMP_START + fcTimestamp) * 1000;
+};
+
+export const saveUserProfiles = async (fids: number[]) => {
+  const users = await Promise.all(
+    fids.map(async (fid) => {
+      const profile = await getUserProfile(fid);
+
+      return {
+        fid,
+        fcUsername: profile?.username,
+        displayName: profile?.displayName,
+        pfp: profile?.pfp,
+        bio: profile?.bio,
+      };
+    }),
+  );
+
+  await prisma.user.createMany({
+    data: users,
+    skipDuplicates: true,
+  });
+};
+
+export const saveConnectedAddresses = async (fids: number[]) => {
+  const connectedAddresses = (
+    await Promise.all(
+      fids.map(async (fid) => {
+        const addresses = await getConnectedAddresses(fid);
+        return addresses.map((address) => ({
+          userFid: fid,
+          address,
+        }));
+      }),
+    )
+  ).flat();
+
+  await prisma.connectedAddress.createMany({
+    data: connectedAddresses,
+    skipDuplicates: true,
+  });
+};
+
+// Sync Farcaster user profiles
+const getAllUsers = async () => {
+  const fids = await getFIDs();
+
+  await batchRun(
+    async (fids: number[]) => {
+      const users = await Promise.all(
+        fids.map(async (fid) => {
+          const profile = await getUserProfile(fid);
+
+          return {
+            fid,
+            fcUsername: profile?.username,
+            displayName: profile?.displayName,
+            pfp: profile?.pfp,
+            bio: profile?.bio,
+          };
+        }),
+      );
+
+      await prisma.user.createMany({
+        data: users,
+        skipDuplicates: true,
+      });
+    },
+    fids,
+    'Sync users',
+  );
+};
+
+// Get all connected addresses for all Farcaster users
+const getAllConnectedAddresses = async () => {
+  const users = await prisma.user.findMany({
+    select: {
+      fid: true,
+    },
+  });
+  const fids = users.map((u) => u.fid);
+
+  await batchRun(
+    async (fids: number[]) => {
+      const connectedAddresses = (
+        await Promise.all(
+          fids.map(async (fid) => {
+            const addresses = await getConnectedAddresses(fid);
+            return addresses.map((address) => ({
+              userFid: fid,
+              address,
+            }));
+          }),
+        )
+      ).flat();
+
+      await prisma.connectedAddress.createMany({
+        data: connectedAddresses,
+        skipDuplicates: true,
+      });
+    },
+    fids,
+    'Sync addresses',
+  );
+};
+
+export const syncUsers = async () => {
+  const latestEvent = await prisma.hubEventsSyncInfo.findFirst({
+    select: {
+      synchedEventId: true,
+    },
+  });
+
+  if (!latestEvent) {
+    // When no hub events have been processed yet, sync all users
+    await getAllUsers();
+    await getAllConnectedAddresses();
+  } else {
+    // The latest event ID that has been processed
+    let nextPageEventId = latestEvent?.synchedEventId || 0;
+
+    while (true) {
+      const result = await queryHubble<HubEventsResponse>('events', {
+        from_event_id: nextPageEventId.toString(),
+      });
+
+      const events = result.events;
+
+      // Save all the users that have been added
+      const updatedFids = events
+        .filter((e) => {
+          const messageType = e.mergeMessageBody?.message.data.type;
+          return (
+            messageType === 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS' ||
+            messageType === 'MESSAGE_TYPE_USER_DATA_ADD'
+          );
+        })
+        .map((e) => (e.mergeMessageBody as MergeMessageBody).message.data.fid);
+
+      await saveUserProfiles(updatedFids);
+      await saveConnectedAddresses(updatedFids);
+
+      const latestEventTimestamp =
+        events[events.length - 1]?.mergeMessageBody?.message.data.timestamp;
+
+      if (latestEventTimestamp) {
+        const syncTarget = new Date().getTime() - 1000 * 5; // 5 seconds ago
+        if (toUnixTimestamp(latestEventTimestamp) > syncTarget) {
+          console.log('Sync target reached');
+          break;
+        }
+      }
+
+      nextPageEventId = result.nextPageEventId;
+
+      if (!nextPageEventId) {
+        break;
+      } else {
+        await prisma.hubEventsSyncInfo.upsert({
+          where: {
+            eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
+          },
+          update: {
+            synchedEventId: result.nextPageEventId,
+          },
+          create: {
+            eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
+            synchedEventId: result.nextPageEventId,
+          },
+        });
+      }
+    }
+  }
 };

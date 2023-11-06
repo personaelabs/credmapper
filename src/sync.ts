@@ -1,116 +1,104 @@
-import { getConnectedAddresses, getFIDs, getUserProfile } from './providers/farcaster';
+import { syncUsers } from './providers/farcaster';
 import prisma from './prisma';
 import { syncPurchasedEvents, syncSetupNewContractEvents } from './providers/zora';
-import { linkAddressTraits } from './lib/linkTraits';
 import { Hex } from 'viem';
 import { batchRun } from './utils';
 
-// Sync Farcaster user profiles
-const syncUsers = async () => {
-  const latestHubEvent = await prisma.hubEvent.findFirst({
-    orderBy: { timestamp: 'desc' },
-  });
+const linkAddressTraits = async () => {
+  // Get the latest link time
+  const linkInfo = await prisma.linkInfo.findFirst();
 
-  if (!latestHubEvent) {
-    const fids = await getFIDs();
-
-    await batchRun(
-      async (fids: number[]) => {
-        const users = await Promise.all(
-          fids.map(async (fid) => {
-            const profile = await getUserProfile(fid);
-
-            return {
-              fid,
-              fcUsername: profile?.username,
-              displayName: profile?.displayName,
-              pfp: profile?.pfp,
-              bio: profile?.bio,
-            };
-          }),
-        );
-
-        await prisma.user.createMany({
-          data: users,
-          skipDuplicates: true,
-        });
-      },
-      fids,
-      'Sync users',
-    );
-  } else {
-    // TODO: Sync new users by going through the hub events
-  }
-};
-
-// Sync Farcaster connected addresses
-const syncConnectedAddresses = async () => {
-  const latestHubEvent = await prisma.hubEvent.findFirst({
-    orderBy: { timestamp: 'desc' },
-  });
-
-  if (!latestHubEvent) {
-    const users = await prisma.user.findMany({
+  let addresses;
+  if (!linkInfo) {
+    // When there is no past link info, link all addresses
+    addresses = await prisma.connectedAddress.findMany({
       select: {
-        fid: true,
+        address: true,
       },
     });
-    const fids = users.map((u) => u.fid);
-
-    await batchRun(
-      async (fids: number[]) => {
-        const connectedAddresses = (
-          await Promise.all(
-            fids.map(async (fid) => {
-              const addresses = await getConnectedAddresses(fid);
-              return addresses.map((address) => ({
-                userFid: fid,
-                address,
-              }));
-            }),
-          )
-        ).flat();
-
-        await prisma.connectedAddress.createMany({
-          data: connectedAddresses,
-          skipDuplicates: true,
-        });
-      },
-      fids,
-      'Sync addresses',
-    );
   } else {
-    // TODO: Sync new users by going through the hub events
-  }
-};
+    const unlinkedPurchases = await prisma.purchasedEvent.findMany({
+      where: {
+        connectedAddress: null,
+        updatedAt: {
+          gte: linkInfo.latestLinkTime,
+        },
+      },
+      select: {
+        minter: true,
+      },
+    });
 
-const linkAllAddressTraits = async () => {
-  const addresses = await prisma.connectedAddress.findMany({
-    select: {
-      address: true,
-    },
-  });
+    // Get all addresses that might have new links since the last link time
+    addresses = await prisma.connectedAddress.findMany({
+      where: {
+        OR: [
+          {
+            address: {
+              in: unlinkedPurchases.map((p) => p.minter),
+            },
+          },
+          {
+            createdAt: {
+              gte: linkInfo.latestLinkTime,
+            },
+          },
+        ],
+      },
+      select: {
+        address: true,
+      },
+    });
+  }
 
   await batchRun(
     async (addresses: Hex[]) => {
-      await Promise.all(addresses.map((address) => linkAddressTraits(address)));
+      await Promise.all(
+        addresses.map(async (address) => {
+          // Link foreign keys
+          await prisma.purchasedEvent.updateMany({
+            data: {
+              connectedAddress: address,
+            },
+            where: {
+              minter: address,
+            },
+          });
+        }),
+      );
     },
     addresses.map((a) => a.address as Hex),
     'Link traits',
   );
+
+  // Update the latest link time
+  await prisma.linkInfo.upsert({
+    where: {
+      id: 1,
+    },
+    update: {
+      latestLinkTime: new Date(),
+    },
+    create: {
+      id: 1,
+      latestLinkTime: new Date(),
+    },
+  });
 };
 
 const sync = async () => {
+  console.time('Sync time');
   // 1155 contracts
   await syncSetupNewContractEvents();
   await syncPurchasedEvents();
 
+  // Sync Farcaster users
   await syncUsers();
-  await syncConnectedAddresses();
 
-  // Link all the traits indexed by the above functions
+  // Link the traits indexed by the above functions
   // to the Farcaster addresses
-  await linkAllAddressTraits();
+  await linkAddressTraits();
+  console.timeEnd('Sync time');
 };
 
 sync();

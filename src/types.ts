@@ -25,6 +25,38 @@ export interface FidsResponse {
   nextPageToken?: string;
 }
 
+export interface MergeMessageBody {
+  message: {
+    data: {
+      type: string;
+      fid: number;
+      timestamp: number;
+      network: string;
+    };
+  };
+}
+
+export interface MergeUsernameProofBody {
+  usernameProof: {
+    timestamp: number;
+    name: string;
+    fid: number;
+    type: string;
+  };
+}
+
+export interface HubEvent {
+  type: string;
+  id: number;
+  mergeMessageBody?: MergeMessageBody;
+  mergeUsernameProofBody?: MergeUsernameProofBody;
+}
+
+export interface HubEventsResponse {
+  nextPageEventId: number;
+  events: HubEvent[];
+}
+
 export interface DuneTransactionRow {
   to: string;
   from: string;

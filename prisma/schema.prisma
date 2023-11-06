@@ -42,6 +42,9 @@ model PurchasedEvent {
   // Optional foreign key
   purchaseToConnectedAddress ConnectedAddress? @relation(fields: [connectedAddress], references: [address])
   connectedAddress           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model User {
@@ -66,13 +69,11 @@ model ConnectedAddress {
   purchases PurchasedEvent[]
 }
 
-model HubEvent {
-  id        BigInt   @id
-  type      String
-  body      Json
-  timestamp DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model HubEventsSyncInfo {
+  eventType      String   @id
+  synchedEventId BigInt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model SyncInfo {
@@ -83,4 +84,11 @@ model SyncInfo {
   updatedAt    DateTime @updatedAt
 
   @@id([eventName, chain])
+}
+
+model LinkInfo {
+  id             Int      @id @default(autoincrement())
+  latestLinkTime DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
