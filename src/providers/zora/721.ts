@@ -7,13 +7,14 @@ import * as chains from 'viem/chains';
 import { syncLogs } from '../../lib/syncLogs';
 import { ZoraNFT, ZoraNFTMetadata } from '../../types';
 import { batchRun } from '../../utils';
-import ERC721Drop from './abi/ERC721Drop.json';
+import ERC721 from './abi/ERC721.json';
 import * as ipfs from '../../providers/ipfs';
+import axios from 'axios';
 
 // Sync metadata of 721 tokens minted by Farcaster users.
 // (We don't sync metadata of 721 tokens that haven't been minted by Farcaster users)
-export const sync721Tokens = async () => {
-  const client = getClient(chains.zora);
+export const sync721Tokens = async (chain: Chain) => {
+  const client = getClient(chain);
 
   const connectedAddress = (
     await prisma.connectedAddress.findMany({
@@ -23,10 +24,11 @@ export const sync721Tokens = async () => {
     })
   ).map((a) => a.address) as Hex[];
 
-  const synchedBlock = (await getSynchedBlock('ERC721Token', Chain.Zora)) || BigInt(0);
+  const synchedBlock = (await getSynchedBlock('ERC721Token', chain)) || BigInt(0);
 
-  const transfers = await prisma.transferEvent.findMany({
+  const contracts = await prisma.transferEvent.groupBy({
     where: {
+      chain,
       to: {
         in: connectedAddress,
       },
@@ -34,27 +36,36 @@ export const sync721Tokens = async () => {
         gte: synchedBlock,
       },
     },
+    by: ['contractAddress'],
   });
 
   await batchRun(
     async (batch) => {
       const nfts = (
         await Promise.all(
-          batch.map(async (transfer) => {
+          batch.map(async (contract) => {
             try {
               const uri = (await client.readContract({
-                address: transfer.contractAddress as Hex,
-                abi: ERC721Drop.abi as Abi,
-                functionName: 'tokenURI',
-                args: [transfer.tokenId],
+                address: contract.contractAddress as Hex,
+                abi: ERC721 as Abi,
+                functionName: 'contractURI',
               })) as string;
 
               // Some tokens have their metadata directly stored as base64 strings
               if (uri.includes('base64')) {
                 const decoded = atob(uri.split(',')[1]);
                 return JSON.parse(decoded);
+              } else if (uri.includes('https://metadata')) {
+                const { data } = await axios.get(uri);
+
+                return {
+                  name: data.name,
+                  description: data.description,
+                  image: data.image,
+                  animation: data.animation_url,
+                  contractAddress: contract.contractAddress,
+                };
               } else {
-                console.log(uri);
                 const data = await ipfs.get<ZoraNFTMetadata>(
                   uri.replace('ipfs://', '').replace('https://ipfs.io/ipfs/', '').split('?')[0],
                 );
@@ -63,9 +74,7 @@ export const sync721Tokens = async () => {
                   name: data.name,
                   description: data.description,
                   image: data.image,
-                  animation: data.animation_url,
-                  contractAddress: transfer.contractAddress,
-                  tokenId: transfer.tokenId,
+                  contractAddress: contract.contractAddress,
                 };
               }
             } catch (err) {
@@ -75,44 +84,26 @@ export const sync721Tokens = async () => {
         )
       ).filter((data) => data) as ZoraNFT[];
 
-      await prisma.eRC721Token.createMany({
+      await prisma.eRC721Contract.createMany({
         data: nfts.map((data, i) => ({
           contractAddress: batch[i].contractAddress,
-          tokenId: batch[i].tokenId,
           name: data.name || '',
           description: data.description || '',
           image: data.image || '',
-          animation: data.animation_url,
-          chain: Chain.Zora,
+          chain: chain,
         })),
         skipDuplicates: true,
       });
-
-      await prisma.syncInfo.upsert({
-        where: {
-          eventName_chain: {
-            eventName: 'ERC721Token',
-            chain: Chain.Zora,
-          },
-        },
-        update: {
-          synchedBlock: batch[batch.length - 1].blockNumber,
-        },
-        create: {
-          eventName: 'ERC721Token',
-          chain: Chain.Zora,
-          synchedBlock: batch[batch.length - 1].blockNumber,
-        },
-      });
     },
-    transfers,
-    'ERC721',
+    contracts,
+    'ERC721 contract',
+    100,
   );
 };
 
 // Sync `Transfer` events from 721 contracts
-export const syncTransferEvents = async () => {
-  const synchedBlock = await getSynchedBlock('Transfer', Chain.Zora);
+export const syncTransferEvents = async (chain: Chain, contractAddress?: Hex | Hex[]) => {
+  const synchedBlock = await getSynchedBlock('Transfer', chain);
 
   const fromBlock = synchedBlock ? BigInt(synchedBlock) : BigInt(0);
 
@@ -136,7 +127,7 @@ export const syncTransferEvents = async () => {
               tokenId: tokenId.toString(),
               blockNumber: log.blockNumber,
               transactionHash: log.transactionHash,
-              chain: Chain.Zora,
+              chain,
             };
           } else {
             return false;
@@ -151,9 +142,8 @@ export const syncTransferEvents = async () => {
     });
   };
 
-  const client = getClient(chains.zora);
   await syncLogs(
-    client,
+    chain,
     'Transfer',
     [
       {
@@ -177,6 +167,7 @@ export const syncTransferEvents = async () => {
     ],
     fromBlock,
     processTransfers,
+    contractAddress,
     BigInt(1000),
   );
 };

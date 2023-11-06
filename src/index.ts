@@ -88,32 +88,28 @@ export const indexMinters = async () => {
     for (const address of user.connectedAddresses) {
       for (const purchase of address.purchases) {
         const erc1155Meta = erc1155Metadata.find(
-          (meta) => meta.contractAddress === purchase.contractAddress,
-        );
-
-        const erc721Meta = erc721Metadata.find(
-          (meta) => meta.contractAddress === purchase.contractAddress,
+          (meta) =>
+            meta.contractAddress === purchase.contractAddress && meta.tokenId === purchase.tokenId,
         );
 
         if (erc1155Meta) {
           // If this is an ERC1155 contract, we can get the drop title and image from the metadata
           userMints.push({
-            contractAddress: purchase.contractAddress as Hex,
-            minter: purchase.minter as Hex,
             title: erc1155Meta.name,
-            image: erc1155Meta.image,
-            tokenId: purchase.tokenId.toString(),
-            chain: purchase.chain,
           });
-        } else if (erc721Meta) {
+        }
+      }
+
+      for (const transfer of address.transfers) {
+        const erc721Meta = erc721Metadata.find(
+          (meta) =>
+            meta.contractAddress === transfer.contractAddress && meta.tokenId === transfer.tokenId,
+        );
+
+        if (erc721Meta) {
           // If this is an ERC721 contract, we can get the drop title and image from the metadata
           userMints.push({
-            contractAddress: purchase.contractAddress as Hex,
-            minter: purchase.minter as Hex,
             title: erc721Meta.name,
-            image: erc721Meta.image,
-            tokenId: purchase.tokenId.toString(),
-            chain: purchase.chain,
           });
         }
       }
@@ -135,6 +131,9 @@ export const indexMinters = async () => {
         console.log(
           `Skipping ${userRecord.username} because record size it exceed size limit ${recordSize}/${MAX_RECORD_BYTES}`,
         );
+        if (userRecord.username === 'jacob') {
+          console.log(userRecord);
+        }
       } else {
         indexedRecords.push(userRecord);
       }

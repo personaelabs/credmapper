@@ -12,12 +12,15 @@ import { Hex } from 'viem';
 import { batchRun, retry } from '../utils';
 import prisma from '../prisma';
 
-const HUBBLE_URL = 'http://127.0.0.01:2281/v1';
+const HUBBLE_URL = process.env.HUBBLE_URL || 'http://127.0.0.01:2281/v1';
+
+console.log('Hubble URL:', HUBBLE_URL);
 
 const queryHubble = async <T>(method: string, params: { [key: string]: string }): Promise<T> => {
   return await retry(async () => {
     const { data } = await axios.get(`${HUBBLE_URL}/${method}`, {
       params,
+      //      headers: { accept: 'application/json', api_key: process.env.NEYNAR_API_KEY },
     });
 
     return data;
@@ -256,12 +259,10 @@ export const syncUsers = async () => {
 
   if (!latestEvent) {
     // When no hub events have been processed yet, sync all users
-    // await getAllUsers();
+    await getAllUsers();
     await getAllConnectedAddresses();
 
-    const result = await queryHubble<HubEventsResponse>('events', {
-      reverse: '1',
-    });
+    const result = await queryHubble<HubEventsResponse>('events', {});
     await prisma.hubEventsSyncInfo.upsert({
       where: {
         eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',

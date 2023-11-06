@@ -12,6 +12,7 @@ datasource db {
 
 enum Chain {
   Zora
+  Ethereum
 }
 
 model PurchasedEvent {
@@ -30,6 +31,8 @@ model PurchasedEvent {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([minter])
 }
 
 model TransferEvent {
@@ -47,6 +50,8 @@ model TransferEvent {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([to])
 }
 
 model User {
@@ -94,6 +99,17 @@ model LinkInfo {
   latestLinkTime DateTime
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model ERC721Contract {
+  contractAddress String @id
+  name            String
+  description     String
+  image           String
+  chain           Chain
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ERC721Token {

@@ -7,14 +7,13 @@ import { ZoraNFT, ZoraNFTMetadata } from '../../types';
 import ZoraCreator1155Impl from './abi/ZoraCreator1155Impl.json';
 import * as ipfs from '../../providers/ipfs';
 import { Chain } from '@prisma/client';
-import * as chains from 'viem/chains';
 import { batchRun } from '../../utils';
 
 // Sync metadata of 1155 tokens minted by Farcaster users.
 // (We don't sync metadata of 1155 tokens that haven't been minted by Farcaster users)
-export const sync1155Tokens = async () => {
-  const client = getClient(chains.zora);
-  const synchedBlock = (await getSynchedBlock('ERC1155Token', Chain.Zora)) || BigInt(0);
+export const sync1155Tokens = async (chain: Chain) => {
+  const client = getClient(chain);
+  const synchedBlock = (await getSynchedBlock('ERC1155Token', chain)) || BigInt(0);
 
   const purchasedTokens = await prisma.purchasedEvent.groupBy({
     where: {
@@ -54,6 +53,7 @@ export const sync1155Tokens = async () => {
 
   const purchases = await prisma.purchasedEvent.findMany({
     where: {
+      chain,
       blockNumber: {
         gte: synchedBlock,
       },
@@ -82,7 +82,7 @@ export const sync1155Tokens = async () => {
           description: data.description || '',
           image: data.image || '',
           animation: data.animation_url,
-          chain: Chain.Zora,
+          chain: chain,
         })),
         skipDuplicates: true,
       });
@@ -91,7 +91,7 @@ export const sync1155Tokens = async () => {
         where: {
           eventName_chain: {
             eventName: 'ERC1155Token',
-            chain: Chain.Zora,
+            chain: chain,
           },
         },
         update: {
@@ -99,7 +99,7 @@ export const sync1155Tokens = async () => {
         },
         create: {
           eventName: 'ERC1155Token',
-          chain: Chain.Zora,
+          chain: chain,
           synchedBlock: batch[batch.length - 1].blockNumber,
         },
       });
@@ -110,8 +110,8 @@ export const sync1155Tokens = async () => {
 };
 
 // Sync `Purchased` events from 1155 contracts
-export const syncPurchasedEvents = async () => {
-  const synchedBlock = await getSynchedBlock('Purchased', Chain.Zora);
+export const syncPurchasedEvents = async (chain: Chain) => {
+  const synchedBlock = await getSynchedBlock('Purchased', chain);
 
   const fromBlock = synchedBlock ? BigInt(synchedBlock) : BigInt(0);
 
@@ -138,7 +138,7 @@ export const syncPurchasedEvents = async () => {
           tokenId,
           blockNumber: log.blockNumber,
           transactionHash: log.transactionHash,
-          chain: Chain.Zora,
+          chain,
         };
       }),
     );
@@ -149,9 +149,8 @@ export const syncPurchasedEvents = async () => {
     });
   };
 
-  const client = getClient(chains.zora);
   await syncLogs(
-    client,
+    chain,
     'Purchased',
     [
       {
