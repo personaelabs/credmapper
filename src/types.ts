@@ -2,11 +2,35 @@ import { Chain } from '@prisma/client';
 import { Hex } from 'viem';
 
 export interface UserProfile {
-  fid: string;
-  pfp: string | null;
-  displayName: string | null;
-  bio: string | null;
-  username: string | null;
+  [key: string]: any;
+  fid: bigint;
+  pfp: string;
+  displayName: string;
+  bio: string;
+  username: string;
+  followersCount: number;
+}
+export interface UserDataQueryResult {
+  fid: bigint;
+  value: string;
+}
+
+export interface ConnectedAddressesQueryResults {
+  fid: bigint;
+  addresses: {
+    address: string;
+  }[];
+}
+
+export interface DeletedAddressesQueryResults {
+  fid: bigint;
+  addresses: {
+    address: string;
+  }[];
+}
+
+export interface UsersQueryResult {
+  fid: bigint;
 }
 
 export interface VerificationsByFidResponse {

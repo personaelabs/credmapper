@@ -1,10 +1,10 @@
-import { syncUsers } from './providers/farcaster';
 import prisma from './prisma';
 import { sync1155Tokens, syncPurchasedEvents } from './providers/zora';
 import { Hex } from 'viem';
 import { batchRun } from './utils';
 import { sync721Tokens, syncTransferEvents } from './providers/zora/721';
 import { Chain } from '@prisma/client';
+import { syncUsers } from './providers/farcaster';
 
 // Link the traits indexed by the above functions
 // to the Farcaster addresses
@@ -111,6 +111,8 @@ const syncEthereum = async () => {
     '0xca21d4228cdcc68d4e23807e5e370c07577dd152', // Zorbs
     '0x6339e5e072086621540d0362c4e3cea0d643e114', // Opepen Edition
     '0x9d90669665607f08005cae4a7098143f554c59ef', // Stand with crypto
+    '0x06012c8cf97bead5deae237070f9587f8e7a266d', // Cryptokitties
+    '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb', // CryptoPunks
   ] as Hex[]);
   await sync721Tokens(chain);
 };
@@ -128,7 +130,7 @@ const sync = async () => {
   console.time('Sync time');
 
   // await syncUsers();
-  // await syncEthereum();
+  await syncEthereum();
   await syncZora();
 
   await linkAddressTraits();

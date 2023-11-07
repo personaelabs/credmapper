@@ -1,98 +1,21 @@
 import 'dotenv/config';
-import axios from 'axios';
 import {
-  VerificationsByFidResponse,
   UserProfile,
-  FidsResponse,
-  HubEventsResponse,
-  MergeMessageBody,
-  HubEvent,
+  UserDataQueryResult,
+  ConnectedAddressesQueryResults,
+  DeletedAddressesQueryResults,
 } from '../types';
-import { Hex } from 'viem';
-import { batchRun, retry } from '../utils';
+import { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../prisma';
 
-const HUBBLE_URL = process.env.HUBBLE_URL || 'http://127.0.0.01:2281/v1';
-
-console.log('Hubble URL:', HUBBLE_URL);
-
-const queryHubble = async <T>(method: string, params: { [key: string]: string }): Promise<T> => {
-  return await retry(async () => {
-    const { data } = await axios.get(`${HUBBLE_URL}/${method}`, {
-      params,
-      //      headers: { accept: 'application/json', api_key: process.env.NEYNAR_API_KEY },
-    });
-
-    return data;
-  });
-};
-
-export const getFIDs = async ({ limit }: { limit?: number } = {}): Promise<number[]> => {
-  const allFids = [];
-
-  let nextPageToken = '';
-  while (true) {
-    const res = await queryHubble<FidsResponse>('fids', {
-      pageToken: nextPageToken,
-    });
-
-    allFids.push(...res.fids);
-
-    if (limit && allFids.length >= limit) {
-      break;
-    }
-
-    if (!res.nextPageToken) {
-      break;
-    }
-
-    nextPageToken = res.nextPageToken;
-  }
-
-  return allFids.slice(0, limit);
-};
-
-export const batchQueryHubble = async <T>(
-  method: string,
-  params: { [key: string]: string }[],
-  batchSize: number = 100,
-): Promise<T[]> => {
-  const responses: T[] = [];
-  for (let i = 0; i < params.length; i += batchSize) {
-    const batch = params.slice(i, i + batchSize);
-    const batchResponses = await Promise.all(
-      batch.map(async (param) => {
-        try {
-          return await queryHubble<T>(method, param);
-        } catch (err) {
-          console.log(err);
-          return null;
-        }
-      }),
-    );
-
-    // Filter out the errors
-    const batchSuccessResponses = batchResponses.filter((r) => r !== null) as T[];
-
-    responses.push(...batchSuccessResponses);
-  }
-
-  return responses;
-};
-
-export const getConnectedAddresses = async (fid: number): Promise<Hex[]> => {
-  const { messages } = await queryHubble<VerificationsByFidResponse>('verificationsByFid', {
-    fid: fid.toString(),
-  });
-
-  const connectedAddresses = messages.map((m) => m.data.verificationAddEthAddressBody.address);
-
-  return connectedAddresses;
-};
+// A client that points to the Farcaster replica database
+const fcReplicaClient = new PrismaClient({
+  datasourceUrl: process.env.FARCASTER_REPLICA_DB_URL,
+});
 
 const userDataTypes = [
   {
-    type: 'php',
+    type: 'pfp',
     key: 1,
   },
   {
@@ -109,226 +32,147 @@ const userDataTypes = [
   },
 ];
 
-// Get Farcaster user profile by FID from Hubble
-export const getUserProfile = async (fid: number): Promise<UserProfile | null> => {
-  let profile: any = {};
-  try {
-    for (const { key, type } of userDataTypes) {
-      const { data } = await axios.get(HUBBLE_URL + '/userDataByFid', {
-        params: {
-          fid,
-          user_data_type: key,
-        },
-      });
+// Get all users from the Farcaster replica database
+export const getUsers = async (): Promise<UserProfile[]> => {
+  let profiles: {
+    [key: number]: UserProfile;
+  } = {};
 
-      const value = data.data.userDataBody.value;
-      if (value) {
-        profile[type] = value;
+  for (const { key, type } of userDataTypes) {
+    const result = await fcReplicaClient.$queryRaw<UserDataQueryResult[]>`
+      SELECT
+        fid,
+        value
+      FROM
+        user_data
+      WHERE
+        "type" = ${key}
+      ORDER BY
+        fid
+        `;
+
+    for (const row of result) {
+      const fid = Number(row.fid);
+      if (profiles[fid]) {
+        profiles[fid][type] = row.value;
+      } else {
+        profiles[fid] = {
+          fid: BigInt(fid),
+          pfp: '',
+          displayName: '',
+          bio: '',
+          username: '',
+          followersCount: 0,
+
+          // Set the actual value
+          [type]: row.value,
+        };
       }
     }
-  } catch (err: any) {
-    return null;
   }
 
-  return {
-    fid: fid.toString(),
-    pfp: profile.php || null,
-    displayName: profile.displayName || null,
-    bio: profile.bio || null,
-    username: profile.username || null,
-  };
+  return Object.values(profiles) as UserProfile[];
 };
 
-const FC_TIMESTAMP_START = new Date('2021-01-01T00:00:00Z').getTime() / 1000;
+// Get all connected addresses from the Farcaster replica database
+export const getConnectedAddresses = async (): Promise<ConnectedAddressesQueryResults[]> => {
+  const synchedFIDs = (
+    await prisma.user.findMany({
+      select: {
+        fid: true,
+      },
+    })
+  ).map((r) => r.fid);
 
-// Convert Farcaster timestamp to Unix timestamp in milliseconds
-const toUnixTimestamp = (fcTimestamp: number): number => {
-  return (FC_TIMESTAMP_START + fcTimestamp) * 1000;
+  const result = await fcReplicaClient.$queryRaw<ConnectedAddressesQueryResults[]>`
+    SELECT
+      fid,
+      ARRAY_AGG(claim) as addresses
+    FROM
+      verifications
+    WHERE fid in (${Prisma.join(synchedFIDs)})
+    and deleted_at IS NULL
+    GROUP BY
+      fid
+  `;
+
+  return result;
 };
 
-export const saveUserProfiles = async (fids: number[]) => {
-  const users = await Promise.all(
-    fids.map(async (fid) => {
-      const profile = await getUserProfile(fid);
+export const getDeletedAddresses = async (): Promise<DeletedAddressesQueryResults[]> => {
+  const result = await fcReplicaClient.$queryRaw<DeletedAddressesQueryResults[]>`
+    SELECT
+    fid,
+    ARRAY_AGG(claim) as addresses
+  FROM
+    verifications
+  WHERE
+    deleted_at IS NOT NULL
+  GROUP BY
+    fid
+  `;
 
-      return {
-        fid,
-        fcUsername: profile?.username,
-        displayName: profile?.displayName,
-        pfp: profile?.pfp,
-        bio: profile?.bio,
-      };
-    }),
-  );
-
-  await prisma.user.createMany({
-    data: users,
-    skipDuplicates: true,
-  });
+  return result;
 };
 
-export const saveConnectedAddresses = async (fids: number[]) => {
-  const connectedAddresses = (
-    await Promise.all(
-      fids.map(async (fid) => {
-        const addresses = await getConnectedAddresses(fid);
-        return addresses.map((address) => ({
-          userFid: fid,
-          address,
-        }));
-      }),
-    )
-  ).flat();
-
-  await prisma.connectedAddress.createMany({
-    data: connectedAddresses,
-    skipDuplicates: true,
-  });
-};
-
-// Sync Farcaster user profiles
-const getAllUsers = async () => {
-  const fids = await getFIDs();
-
-  await batchRun(
-    async (fids: number[]) => {
-      const users = await Promise.all(
-        fids.map(async (fid) => {
-          const profile = await getUserProfile(fid);
-
-          return {
-            fid,
-            fcUsername: profile?.username,
-            displayName: profile?.displayName,
-            pfp: profile?.pfp,
-            bio: profile?.bio,
-          };
-        }),
-      );
-
-      await prisma.user.createMany({
-        data: users,
-        skipDuplicates: true,
-      });
-    },
-    fids,
-    'Sync users',
-  );
-};
-
-// Get all connected addresses for all Farcaster users
-const getAllConnectedAddresses = async () => {
-  const users = await prisma.user.findMany({
-    select: {
-      fid: true,
-    },
-  });
-  const fids = users.map((u) => u.fid);
-
-  await batchRun(
-    async (fids: number[]) => {
-      const connectedAddresses = (
-        await Promise.all(
-          fids.map(async (fid) => {
-            const addresses = await getConnectedAddresses(fid);
-            return addresses.map((address) => ({
-              userFid: fid,
-              address,
-            }));
-          }),
-        )
-      ).flat();
-
-      await prisma.connectedAddress.createMany({
-        data: connectedAddresses,
-        skipDuplicates: true,
-      });
-    },
-    fids,
-    'Sync addresses',
-  );
-};
-
-// Sync Farcaster users
 export const syncUsers = async () => {
-  const latestEvent = await prisma.hubEventsSyncInfo.findFirst({
-    select: {
-      synchedEventId: true,
+  console.time('Get user profiles');
+  const userProfiles = await getUsers();
+  console.timeEnd('Get user profiles');
+
+  // Get deleted users
+  const deletedUsers = await prisma.user.findMany({
+    where: {
+      NOT: {
+        fid: {
+          in: userProfiles.map((r) => Number(r.fid)),
+        },
+      },
     },
   });
 
-  if (!latestEvent) {
-    // When no hub events have been processed yet, sync all users
-    await getAllUsers();
-    await getAllConnectedAddresses();
+  // Delete deleted users
+  const profileDeletedFIDs = deletedUsers.map((r) => r.fid);
+  await prisma.user.deleteMany({
+    where: {
+      fid: {
+        in: profileDeletedFIDs,
+      },
+    },
+  });
 
-    const result = await queryHubble<HubEventsResponse>('events', {});
-    await prisma.hubEventsSyncInfo.upsert({
+  // Get deleted connections
+  console.time('Get deleted connections');
+  const deletedConnections = await getDeletedAddresses();
+  console.timeEnd('Get deleted connections');
+
+  // Delete deleted connections
+  for (const connection of deletedConnections) {
+    await prisma.connectedAddress.deleteMany({
       where: {
-        eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
-      },
-      update: {
-        synchedEventId: result.nextPageEventId,
-      },
-      create: {
-        eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
-        synchedEventId: result.nextPageEventId,
+        userFid: Number(connection.fid),
+        address: {
+          in: connection.addresses.map((r) => r.address),
+        },
       },
     });
-  } else {
-    // The latest event ID that has been processed
-    let nextPageEventId = latestEvent?.synchedEventId || 0;
-
-    while (true) {
-      const result = await queryHubble<HubEventsResponse>('events', {
-        from_event_id: nextPageEventId.toString(),
-      });
-
-      const events = result.events;
-
-      // Save all the users that have been added
-      const updatedFids = events
-        .filter((e) => {
-          const messageType = e.mergeMessageBody?.message.data.type;
-          return (
-            messageType === 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS' ||
-            messageType === 'MESSAGE_TYPE_USER_DATA_ADD'
-          );
-        })
-        .map((e) => (e.mergeMessageBody as MergeMessageBody).message.data.fid);
-
-      await saveUserProfiles(updatedFids);
-      await saveConnectedAddresses(updatedFids);
-
-      const latestEventTimestamp =
-        events[events.length - 1]?.mergeMessageBody?.message.data.timestamp;
-
-      if (latestEventTimestamp) {
-        const syncTarget = new Date().getTime() - 1000 * 5; // 5 seconds ago
-        if (toUnixTimestamp(latestEventTimestamp) > syncTarget) {
-          console.log('Sync target reached');
-          break;
-        }
-      }
-
-      nextPageEventId = result.nextPageEventId;
-
-      if (!nextPageEventId) {
-        break;
-      } else {
-        await prisma.hubEventsSyncInfo.upsert({
-          where: {
-            eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
-          },
-          update: {
-            synchedEventId: result.nextPageEventId,
-          },
-          create: {
-            eventType: 'MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS',
-            synchedEventId: result.nextPageEventId,
-          },
-        });
-      }
-    }
   }
+
+  // Get connected addresses
+  console.time('Get connected addresses');
+  const connectedAddresses = await getConnectedAddresses();
+  console.timeEnd('Get connected addresses');
+
+  const data = connectedAddresses
+    .map((r) =>
+      r.addresses.map((address) => ({ userFid: Number(r.fid), address: address.address })),
+    )
+    .flat();
+
+  console.time('Insert connected addresses');
+  await prisma.connectedAddress.createMany({
+    data,
+    skipDuplicates: true,
+  });
+  console.timeEnd('Insert connected addresses');
 };

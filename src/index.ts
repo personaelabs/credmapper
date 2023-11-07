@@ -1,65 +1,44 @@
 import prisma from './prisma';
-import { IndexedRecord, Mint, ZoraDrop } from './types';
+import { IndexedRecord, Mint } from './types';
 import fs from 'fs';
-import { Hex } from 'viem';
+import { getConnectedAddresses, getUsers } from './providers/farcaster';
 
 const MAX_RECORD_BYTES = 10000;
 
 export const indexMinters = async () => {
   // Get all Farcaster users with at least one mint
-  const fcMinters = await prisma.user.findMany({
-    include: {
-      connectedAddresses: {
-        include: {
-          purchases: true,
-          transfers: {
-            where: {
-              from: '0x0000000000000000000000000000000000000000',
-            },
-          },
-        },
-      },
-    },
+  const users = await getUsers();
+  console.log(`Found ${users.length} Farcaster users`);
+  const fcMinters = await getConnectedAddresses();
+  console.log(`Found ${fcMinters.length} Farcaster minters`);
+
+  const minterAddresses = fcMinters.map((row) => row.addresses.map((r) => r.address)).flat();
+
+  // Get all contracts that have been minted to
+  const purchases = await prisma.purchasedEvent.findMany({
     where: {
-      OR: [
-        {
-          connectedAddresses: {
-            some: {
-              purchases: {
-                some: {},
-              },
-            },
-          },
-        },
-        {
-          connectedAddresses: {
-            some: {
-              transfers: {
-                some: {},
-              },
-            },
-          },
-        },
-      ],
+      minter: {
+        in: minterAddresses,
+      },
     },
   });
 
-  console.log(`Found ${fcMinters.length} Farcaster minters`);
+  console.log(`Found ${purchases.length} purchases`);
 
-  // Get all contracts that have been minted to
+  const transfers = await prisma.transferEvent.findMany({
+    where: {
+      to: {
+        in: minterAddresses,
+      },
+      from: '0x0000000000000000000000000000000000000000',
+    },
+  });
+
   const mintedContracts = [
-    ...new Set(
-      fcMinters
-        .map((user) =>
-          user.connectedAddresses
-            .map((address) => [
-              ...address.purchases.map((purchase) => purchase.contractAddress),
-              ...address.transfers.map((transfer) => transfer.contractAddress),
-            ])
-            .flat(),
-        )
-        .flat(),
-    ),
+    ...new Set([
+      ...purchases.map((p) => p.contractAddress),
+      ...transfers.map((t) => t.contractAddress),
+    ]),
   ];
 
   console.log(`Found ${mintedContracts.length} minted contracts`);
@@ -83,10 +62,13 @@ export const indexMinters = async () => {
 
   // Transform the data into the format that can be indexed by Algolia
   const indexedRecords: IndexedRecord[] = [];
+
   for (const user of fcMinters) {
     const userMints: Mint[] = [];
-    for (const address of user.connectedAddresses) {
-      for (const purchase of address.purchases) {
+    for (const address of user.addresses) {
+      const addressPurchases = purchases.filter((p) => p.minter === address.address);
+
+      for (const purchase of addressPurchases) {
         const erc1155Meta = erc1155Metadata.find(
           (meta) =>
             meta.contractAddress === purchase.contractAddress && meta.tokenId === purchase.tokenId,
@@ -100,7 +82,8 @@ export const indexMinters = async () => {
         }
       }
 
-      for (const transfer of address.transfers) {
+      const addressTransfers = transfers.filter((t) => t.to === address.address);
+      for (const transfer of addressTransfers) {
         const erc721Meta = erc721Metadata.find(
           (meta) => meta.contractAddress === transfer.contractAddress,
         );
@@ -115,12 +98,14 @@ export const indexMinters = async () => {
     }
 
     if (userMints.length > 0) {
+      const profile = users.find((u) => u.fid === user.fid)!;
+
       const userRecord = {
         fid: user.fid.toString(),
-        pfp: user.pfp || '',
-        username: user.fcUsername || '',
-        displayName: user.displayName || '',
-        bio: user.bio || '',
+        pfp: profile.pfp,
+        username: profile.username,
+        displayName: profile.displayName,
+        bio: profile.bio,
         mints: userMints,
       };
 

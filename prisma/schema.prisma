@@ -56,11 +56,11 @@ model TransferEvent {
 
 model User {
   fid                Int                @id
-  fcUsername         String?
-  displayName        String?
-  pfp                String?
-  bio                String?
-  followersCount     Int                @default(0)
+  username           String
+  displayName        String
+  pfp                String
+  bio                String
+  followersCount     Int
   createdAt          DateTime           @default(now())
   connectedAddresses ConnectedAddress[]
 }
@@ -77,13 +77,6 @@ model ConnectedAddress {
   transfers TransferEvent[]
 }
 
-model HubEventsSyncInfo {
-  eventType      String   @id
-  synchedEventId BigInt
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
 model SyncInfo {
   eventName    String
   synchedBlock BigInt
@@ -92,13 +85,6 @@ model SyncInfo {
   updatedAt    DateTime @updatedAt
 
   @@id([eventName, chain])
-}
-
-model LinkInfo {
-  id             Int      @id @default(autoincrement())
-  latestLinkTime DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
 }
 
 model ERC721Metadata {
