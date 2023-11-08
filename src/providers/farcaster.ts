@@ -116,6 +116,21 @@ export const getDeletedAddresses = async (): Promise<DeletedAddressesQueryResult
 };
 
 export const syncUsers = async () => {
+  // Get deleted connections
+  const deletedConnections = await getDeletedAddresses();
+
+  // Delete deleted connections
+  for (const connection of deletedConnections) {
+    await prisma.connectedAddress.deleteMany({
+      where: {
+        fid: Number(connection.fid),
+        address: {
+          in: connection.addresses.map((r) => r.address),
+        },
+      },
+    });
+  }
+
   console.time('Get user profiles');
   const userProfiles = await getUsers();
   console.timeEnd('Get user profiles');
@@ -141,22 +156,15 @@ export const syncUsers = async () => {
     },
   });
 
-  // Get deleted connections
-  console.time('Get deleted connections');
-  const deletedConnections = await getDeletedAddresses();
-  console.timeEnd('Get deleted connections');
-
-  // Delete deleted connections
-  for (const connection of deletedConnections) {
-    await prisma.connectedAddress.deleteMany({
-      where: {
-        userFid: Number(connection.fid),
-        address: {
-          in: connection.addresses.map((r) => r.address),
-        },
-      },
-    });
-  }
+  // Create users
+  console.time('Create users');
+  await prisma.user.createMany({
+    data: userProfiles.map((r) => ({
+      ...r,
+      fid: Number(r.fid),
+    })),
+    skipDuplicates: true,
+  });
 
   // Get connected addresses
   console.time('Get connected addresses');
@@ -164,9 +172,7 @@ export const syncUsers = async () => {
   console.timeEnd('Get connected addresses');
 
   const data = connectedAddresses
-    .map((r) =>
-      r.addresses.map((address) => ({ userFid: Number(r.fid), address: address.address })),
-    )
+    .map((r) => r.addresses.map((address) => ({ fid: Number(r.fid), address: address.address })))
     .flat();
 
   console.time('Insert connected addresses');

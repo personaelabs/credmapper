@@ -122,3 +122,11 @@ export interface IndexedRecord {
   pfp: string;
   mints: Mint[];
 }
+
+export interface CryptoKittyUser {
+  fid: number;
+  address: string;
+  username: string;
+  displayName: string;
+  pfp: string;
+}

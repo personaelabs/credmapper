@@ -36,9 +36,7 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
         },
         fromBlock: batchFrom,
         toBlock: batchFrom + batchSize,
-        args: {
-          from: '0x0000000000000000000000000000000000000000',
-        },
+        strict: true,
       });
 
       await saveLogs(logs);

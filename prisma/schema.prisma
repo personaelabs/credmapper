@@ -25,10 +25,6 @@ model PurchasedEvent {
   contractAddress String
   chain           Chain
 
-  // Optional foreign key
-  purchaseToConnectedAddress ConnectedAddress? @relation(fields: [connectedAddress], references: [address])
-  connectedAddress           String?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -43,10 +39,6 @@ model TransferEvent {
   tokenId         String
   contractAddress String
   chain           Chain
-
-  // Optional foreign key
-  transferToConnectedAddress ConnectedAddress? @relation(fields: [connectedAddress], references: [address])
-  connectedAddress           String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -70,11 +62,8 @@ model ConnectedAddress {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  User    User? @relation(fields: [userFid], references: [fid])
-  userFid Int?
-
-  purchases PurchasedEvent[]
-  transfers TransferEvent[]
+  User User @relation(fields: [fid], references: [fid])
+  fid  Int
 }
 
 model SyncInfo {

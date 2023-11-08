@@ -115,19 +115,19 @@ export const syncTransferEvents = async (chain: Chain, contractAddress?: Hex | H
     'Transfer',
     [
       {
-        indexed: true,
+        indexed: false,
         internalType: 'address',
         name: 'from',
         type: 'address',
       },
       {
-        indexed: true,
+        indexed: false,
         internalType: 'address',
         name: 'to',
         type: 'address',
       },
       {
-        indexed: true,
+        indexed: false,
         internalType: 'uint256',
         name: 'tokenId',
         type: 'uint256',
