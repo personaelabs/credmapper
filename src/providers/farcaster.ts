@@ -33,7 +33,7 @@ const userDataTypes = [
 ];
 
 // Get all users from the Farcaster replica database
-export const getUsers = async (): Promise<UserProfile[]> => {
+const getUsers = async (): Promise<UserProfile[]> => {
   let profiles: {
     [key: number]: UserProfile;
   } = {};
@@ -99,7 +99,7 @@ export const getConnectedAddresses = async (): Promise<ConnectedAddressesQueryRe
   return result;
 };
 
-export const getDeletedAddresses = async (): Promise<DeletedAddressesQueryResults[]> => {
+const getDeletedAddresses = async (): Promise<DeletedAddressesQueryResults[]> => {
   const result = await fcReplicaClient.$queryRaw<DeletedAddressesQueryResults[]>`
     SELECT
     fid,
@@ -157,7 +157,6 @@ export const syncUsers = async () => {
   });
 
   // Create users
-  console.time('Create users');
   await prisma.user.createMany({
     data: userProfiles.map((r) => ({
       ...r,

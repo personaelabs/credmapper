@@ -1,11 +1,10 @@
 import { Chain, TransferEvent } from '@prisma/client';
-import { getSynchedBlock } from '../../lib/syncInfo';
-import prisma from '../../prisma';
+import prisma from '../prisma';
 import { Abi, GetFilterLogsReturnType, Hex } from 'viem';
-import { getClient } from '../ethRpc';
-import { syncLogs } from '../../lib/syncLogs';
-import { ERC721Metadata } from '../../types';
-import { batchRun } from '../../utils';
+import { getClient } from './ethRpc';
+import { syncLogs } from '../lib/syncLogs';
+import { ERC721Metadata } from '../types';
+import { batchRun } from '../utils';
 import ERC721 from './abi/ERC721.json';
 import { AbiEvent } from 'abitype';
 
@@ -73,11 +72,7 @@ export const sync721Tokens = async (chain: Chain) => {
 };
 
 // Sync `Transfer` events from 721 contracts
-export const syncTransferEvents = async (
-  chain: Chain,
-  contractAddress: Hex[],
-  event: AbiEvent = TRANSFER_EVENT,
-) => {
+export const syncTransferEvents = async (chain: Chain, contractAddress: Hex[], event: AbiEvent) => {
   const latestEvents = await prisma.transferEvent.findMany({
     where: {
       chain,
@@ -90,13 +85,14 @@ export const syncTransferEvents = async (
     },
   });
 
-  const fromBlock = latestEvents.map((event) => event.blockNumber).sort()[0] || BigInt(0);
+  const fromBlock = latestEvents.map((event) => event.blockNumber).sort()[0] || BigInt(10000000);
 
   const processTransfers = async (logs: GetFilterLogsReturnType) => {
     const data = (
       await Promise.all(
         logs.map((log) => {
           const contractAddress = log.address.toLowerCase() as Hex;
+
           // @ts-ignore
           const from = log.args.from;
           // @ts-ignore

@@ -1,8 +1,8 @@
-import { sync1155Tokens, syncPurchasedEvents } from './providers/zora';
 import { Hex } from 'viem';
-import { sync721Tokens, syncTransferEvents } from './providers/zora/721';
+import { sync721Tokens, syncTransferEvents } from './providers/721';
 import { Chain } from '@prisma/client';
-import { TRANSFER_EVENT } from './providers/zora/721';
+import { TRANSFER_EVENT } from './providers/721';
+import { syncUsers } from './providers/farcaster';
 
 const CRYPTO_KITTIES_TRANSFER_EVENT = {
   ...TRANSFER_EVENT,
@@ -22,7 +22,7 @@ const contracts: Hex[] = [
 const syncEthereum = async () => {
   const chain = Chain.Ethereum;
 
-  await syncTransferEvents(chain, contracts);
+  await syncTransferEvents(chain, contracts, TRANSFER_EVENT);
 
   await syncTransferEvents(
     chain,
@@ -33,19 +33,11 @@ const syncEthereum = async () => {
   await sync721Tokens(chain);
 };
 
-// We only go through hand-picked contracts on Ethereum
-const syncZora = async () => {
-  const chain = Chain.Zora;
-  await syncPurchasedEvents(chain);
-  await sync1155Tokens(chain);
-};
-
 const sync = async () => {
   console.time('Sync time');
 
-  // await syncUsers();
+  await syncUsers();
   await syncEthereum();
-  // await syncZora();
 
   console.timeEnd('Sync time');
 };
