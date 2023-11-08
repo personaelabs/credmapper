@@ -72,21 +72,12 @@ export const sync721Tokens = async (chain: Chain) => {
 };
 
 // Sync `Transfer` events from 721 contracts
-export const syncTransferEvents = async (chain: Chain, contractAddress: Hex[], event: AbiEvent) => {
-  const latestEvents = await prisma.transferEvent.findMany({
-    where: {
-      chain,
-    },
-    orderBy: {
-      blockNumber: 'desc',
-    },
-    select: {
-      blockNumber: true,
-    },
-  });
-
-  const fromBlock = latestEvents.map((event) => event.blockNumber).sort()[0] || BigInt(10000000);
-
+export const syncTransferEvents = async (
+  chain: Chain,
+  contractAddress: Hex[],
+  event: AbiEvent,
+  fromBlock: bigint,
+) => {
   const processTransfers = async (logs: GetFilterLogsReturnType) => {
     const data = (
       await Promise.all(

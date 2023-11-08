@@ -1,4 +1,5 @@
 import { Chain } from '@prisma/client';
+import { AbiEvent } from 'abitype';
 import { Hex } from 'viem';
 
 export interface UserProfile {
@@ -129,4 +130,12 @@ export interface CryptoKittyUser {
   username: string;
   displayName: string;
   pfp: string;
+}
+
+export interface ContractEventInfo {
+  address: Hex;
+  chain: Chain;
+  name: string;
+  deployedBlock: number;
+  event: AbiEvent;
 }

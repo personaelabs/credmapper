@@ -1,4 +1,5 @@
 import { Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'viem';
+import prisma from '../prisma';
 import { Chain as DBChain } from '@prisma/client';
 import { getClient } from '../providers/ethRpc';
 import { AbiEvent } from 'abitype';
