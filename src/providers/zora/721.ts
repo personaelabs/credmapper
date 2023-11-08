@@ -7,6 +7,9 @@ import { syncLogs } from '../../lib/syncLogs';
 import { ERC721Metadata } from '../../types';
 import { batchRun } from '../../utils';
 import ERC721 from './abi/ERC721.json';
+import { AbiEvent } from 'abitype';
+
+export const TRANSFER_EVENT = ERC721.find((abi) => abi.name === 'Transfer') as AbiEvent;
 
 // Sync metadata of 721 tokens minted by Farcaster users.
 // (We don't sync metadata of 721 tokens that haven't been minted by Farcaster users)
@@ -70,10 +73,24 @@ export const sync721Tokens = async (chain: Chain) => {
 };
 
 // Sync `Transfer` events from 721 contracts
-export const syncTransferEvents = async (chain: Chain, contractAddress?: Hex | Hex[]) => {
-  const synchedBlock = await getSynchedBlock('Transfer', chain);
+export const syncTransferEvents = async (
+  chain: Chain,
+  contractAddress: Hex[],
+  event: AbiEvent = TRANSFER_EVENT,
+) => {
+  const latestEvents = await prisma.transferEvent.findMany({
+    where: {
+      chain,
+    },
+    orderBy: {
+      blockNumber: 'desc',
+    },
+    select: {
+      blockNumber: true,
+    },
+  });
 
-  const fromBlock = synchedBlock ? BigInt(synchedBlock) : BigInt(0);
+  const fromBlock = latestEvents.map((event) => event.blockNumber).sort()[0] || BigInt(0);
 
   const processTransfers = async (logs: GetFilterLogsReturnType) => {
     const data = (
@@ -110,32 +127,5 @@ export const syncTransferEvents = async (chain: Chain, contractAddress?: Hex | H
     });
   };
 
-  await syncLogs(
-    chain,
-    'Transfer',
-    [
-      {
-        indexed: false,
-        internalType: 'address',
-        name: 'from',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'address',
-        name: 'to',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-    ],
-    fromBlock,
-    processTransfers,
-    contractAddress,
-    BigInt(1000),
-  );
+  await syncLogs(chain, event, fromBlock, processTransfers, contractAddress, BigInt(1000));
 };

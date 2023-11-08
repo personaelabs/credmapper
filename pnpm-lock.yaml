@@ -11,6 +11,9 @@ dependencies:
   '@types/node':
     specifier: ^20.8.10
     version: 20.8.10
+  abitype:
+    specifier: 0.9.8
+    version: 0.9.8(typescript@5.2.2)
   alchemy-sdk:
     specifier: ^2.10.1
     version: 2.10.1

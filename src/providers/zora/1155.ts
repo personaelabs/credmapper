@@ -8,6 +8,9 @@ import ZoraCreator1155Impl from './abi/ZoraCreator1155Impl.json';
 import * as ipfs from '../../providers/ipfs';
 import { Chain } from '@prisma/client';
 import { batchRun } from '../../utils';
+import { AbiEvent } from 'abitype';
+
+const PURCHASE_EVENT = ZoraCreator1155Impl.abi.find((abi) => abi.name === 'Purchased') as AbiEvent;
 
 // Sync metadata of 1155 tokens minted by Farcaster users.
 // (We don't sync metadata of 1155 tokens that haven't been minted by Farcaster users)
@@ -149,42 +152,5 @@ export const syncPurchasedEvents = async (chain: Chain) => {
     });
   };
 
-  await syncLogs(
-    chain,
-    'Purchased',
-    [
-      {
-        indexed: true,
-        internalType: 'address',
-        name: 'sender',
-        type: 'address',
-      },
-      {
-        indexed: true,
-        internalType: 'address',
-        name: 'minter',
-        type: 'address',
-      },
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'tokenId',
-        type: 'uint256',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'quantity',
-        type: 'uint256',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'value',
-        type: 'uint256',
-      },
-    ],
-    fromBlock,
-    processPurchases,
-  );
+  await syncLogs(chain, PURCHASE_EVENT, fromBlock, processPurchases);
 };

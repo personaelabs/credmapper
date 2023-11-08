@@ -2,17 +2,17 @@ import { Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'vi
 import prisma from '../prisma';
 import { Chain as DBChain } from '@prisma/client';
 import { getClient } from '../providers/ethRpc';
+import { AbiEvent } from 'abitype';
 
 // Sync logs for a specific event.
 // Use `syncContractLogs` to sync logs for a specific contract.
 export const syncLogs = async <T extends Transport, C extends Chain>(
   chain: DBChain,
-  eventName: string,
-  eventInputs: any,
+  event: AbiEvent,
   fromBlock: bigint,
   saveLogs: (logs: GetFilterLogsReturnType) => Promise<void>,
   contractAddress?: Hex | Hex[],
-  batchSize: bigint = BigInt(10000),
+  batchSize: bigint = BigInt(1000),
 ) => {
   const client = getClient(chain);
 
@@ -21,7 +21,7 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
 
   for (let batchFrom = fromBlock; batchFrom < latestBlock; batchFrom += batchSize) {
     console.log(
-      `Sync: ${eventName} (${
+      `Sync: ${event.name} (${
         client.chain.name
       }) ${batchFrom.toLocaleString()}/${latestBlock.toLocaleString()}`,
     );
@@ -29,37 +29,16 @@ export const syncLogs = async <T extends Transport, C extends Chain>(
     try {
       const logs = await client.getLogs({
         address: contractAddress,
-        event: {
-          inputs: eventInputs,
-          name: eventName,
-          type: 'event',
-        },
+        event,
         fromBlock: batchFrom,
         toBlock: batchFrom + batchSize,
         strict: true,
       });
 
       await saveLogs(logs);
-
-      await prisma.syncInfo.upsert({
-        where: {
-          eventName_chain: {
-            eventName,
-            chain,
-          },
-        },
-        update: {
-          synchedBlock: batchFrom + batchSize,
-        },
-        create: {
-          eventName,
-          chain,
-          synchedBlock: batchFrom + batchSize,
-        },
-      });
     } catch (err) {
       console.log(
-        `Failed to fetch ${eventName} events from ${batchFrom} to ${batchFrom + batchSize}`,
+        `Failed to fetch ${event.name} events from ${batchFrom} to ${batchFrom + batchSize}`,
       );
       console.log(err);
     }
