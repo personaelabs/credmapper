@@ -43,6 +43,20 @@ const contracts: ContractEventInfo[] = [
     chain: Chain.Ethereum,
     event: TRANSFER_EVENT,
   },
+  {
+    name: 'Art Blocks',
+    address: '0x059edd72cd353df5106d2b9cc5ab83a52287ac3a',
+    deployedBlock: 11338811,
+    chain: Chain.Ethereum,
+    event: TRANSFER_EVENT,
+  },
+  {
+    name: 'SuperRare',
+    address: '0xb932a70a57673d89f4acffbe830e8ed7f75fb9e0',
+    deployedBlock: 8486734,
+    chain: Chain.Ethereum,
+    event: TRANSFER_EVENT,
+  },
 ];
 
 export default contracts;
