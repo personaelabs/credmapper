@@ -2,7 +2,7 @@ import { sync721Tokens, syncTransferEvents } from './providers/721';
 import { Chain } from '@prisma/client';
 import { TRANSFER_EVENT } from './providers/721';
 import { syncUsers } from './providers/farcaster';
-import contracts from './contracts';
+import contracts, { SUPERARE_CONTRACT, SUPERARE_CONTRACT_TRANSFER_EVENT } from './contracts';
 import { CRYPTO_KITTIES_TRANSFER_EVENT, CRYPTO_KITTIES_CONTRACT } from './contracts';
 import prisma from './prisma';
 import { bigIntMin } from './utils';
@@ -28,6 +28,31 @@ const syncCryptoKittyTransfers = async () => {
     chain,
     [CRYPTO_KITTIES_CONTRACT.address],
     CRYPTO_KITTIES_TRANSFER_EVENT,
+    fromBlock,
+  );
+};
+
+const syncSupeRareTransfers = async () => {
+  const chain = Chain.Ethereum;
+
+  const latestEvent = await prisma.transferEvent.findFirst({
+    where: {
+      contractAddress: SUPERARE_CONTRACT.address,
+    },
+    orderBy: {
+      blockNumber: 'asc',
+    },
+    select: {
+      blockNumber: true,
+    },
+  });
+
+  const fromBlock = BigInt(latestEvent?.blockNumber || SUPERARE_CONTRACT.deployedBlock);
+
+  await syncTransferEvents(
+    chain,
+    [SUPERARE_CONTRACT.address],
+    SUPERARE_CONTRACT_TRANSFER_EVENT,
     fromBlock,
   );
 };
@@ -76,8 +101,9 @@ const sync = async () => {
   console.time('Sync time');
 
   await syncUsers();
-  await syncERC721Transfers();
+  await syncSupeRareTransfers();
   await syncCryptoKittyTransfers();
+  await syncERC721Transfers();
 
   console.timeEnd('Sync time');
 };

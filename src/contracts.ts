@@ -21,6 +21,29 @@ export const CRYPTO_KITTIES_CONTRACT: ContractEventInfo = {
   event: CRYPTO_KITTIES_TRANSFER_EVENT,
 };
 
+export const SUPERARE_CONTRACT_TRANSFER_EVENT = {
+  ...TRANSFER_EVENT,
+  // The `tokenId` in the `Transfer` event of the SupeRare contract isn't indexed.
+  inputs: TRANSFER_EVENT.inputs.map((input) => {
+    if (input.name === 'tokenId') {
+      return {
+        ...input,
+        indexed: false,
+      };
+    }
+
+    return input;
+  }),
+};
+
+export const SUPERARE_CONTRACT: ContractEventInfo = {
+  name: 'SuperRare',
+  address: '0x41a322b28d0ff354040e2cbc676f0320d8c8850d',
+  deployedBlock: 5364090,
+  chain: Chain.Ethereum,
+  event: SUPERARE_CONTRACT_TRANSFER_EVENT,
+};
+
 const contracts: ContractEventInfo[] = [
   {
     name: 'Zorbs',
