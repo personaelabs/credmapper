@@ -6,6 +6,7 @@ import { syncUsers } from './providers/farcaster';
 import contracts from './contracts';
 import { CRYPTO_KITTIES_TRANSFER_EVENT, CRYPTO_KITTIES_CONTRACT } from './contracts';
 import prisma from './prisma';
+import { bigIntMin } from './utils';
 
 const syncCryptoKittyTransfers = async () => {
   const chain = Chain.Ethereum;
@@ -37,7 +38,7 @@ const syncERC721Transfers = async () => {
 
   const latestEvents = await prisma.transferEvent.groupBy({
     by: ['contractAddress'],
-    _min: {
+    _max: {
       blockNumber: true,
     },
     where: {
@@ -54,10 +55,9 @@ const syncERC721Transfers = async () => {
   // If there is a contract that has never been synced,
   // we start from that contract' deployed block.
 
-  const fromBlock = BigInt(
-    unsynchedContracts.length > 0
-      ? unsynchedContracts.map((contract) => contract.deployedBlock).sort()[0]!
-      : latestEvents.map((event) => event._min.blockNumber).sort()[0]!,
+  const fromBlock = bigIntMin(
+    ...unsynchedContracts.map((contract) => BigInt(contract.deployedBlock)),
+    ...latestEvents.map((event) => event._max.blockNumber as bigint),
   );
 
   await syncTransferEvents(
@@ -73,7 +73,7 @@ const syncERC721Transfers = async () => {
 const sync = async () => {
   console.time('Sync time');
 
-  await syncUsers();
+  // await syncUsers();
   await syncERC721Transfers();
   await syncCryptoKittyTransfers();
 
