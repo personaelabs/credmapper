@@ -1,9 +1,9 @@
 import { Chain } from '@prisma/client';
-import { AbiEvent } from 'abitype';
-import { Hex } from 'viem';
 import { TRANSFER_EVENT } from './providers/721';
 import { ContractEventInfo } from './types';
 
+// We have a different `Transfer` event for the CryptoKitties contract
+// because it has a different format from standard ERC-721.
 export const CRYPTO_KITTIES_TRANSFER_EVENT = {
   ...TRANSFER_EVENT,
   // The args of the `Transfer` event in the CryptoKitties contract aren't indexed.

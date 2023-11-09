@@ -1,4 +1,3 @@
-import { Hex } from 'viem';
 import { sync721Tokens, syncTransferEvents } from './providers/721';
 import { Chain } from '@prisma/client';
 import { TRANSFER_EVENT } from './providers/721';
@@ -36,6 +35,9 @@ const syncCryptoKittyTransfers = async () => {
 const syncERC721Transfers = async () => {
   const chain = Chain.Ethereum;
 
+  // 1. Determine what block height to start syncing from.
+
+  // Get the latest synched block number for each contract.
   const latestEvents = await prisma.transferEvent.groupBy({
     by: ['contractAddress'],
     _max: {
@@ -48,18 +50,18 @@ const syncERC721Transfers = async () => {
 
   const synchedContracts = latestEvents.map((event) => event.contractAddress);
 
+  // Get the contracts that have never been synced.
   const unsynchedContracts = contracts.filter(
     (contract) => !synchedContracts.includes(contract.address),
   );
 
-  // If there is a contract that has never been synced,
-  // we start from that contract' deployed block.
-
+  // Get the smallest block number from `unsynchedContracts` and `latestEvents`.
   const fromBlock = bigIntMin(
     ...unsynchedContracts.map((contract) => BigInt(contract.deployedBlock)),
     ...latestEvents.map((event) => event._max.blockNumber as bigint),
   );
 
+  // Sync all transfer events
   await syncTransferEvents(
     chain,
     contracts.map((contract) => contract.address),
@@ -73,7 +75,7 @@ const syncERC721Transfers = async () => {
 const sync = async () => {
   console.time('Sync time');
 
-  // await syncUsers();
+  await syncUsers();
   await syncERC721Transfers();
   await syncCryptoKittyTransfers();
 
