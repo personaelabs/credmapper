@@ -6,6 +6,7 @@ import contracts, { SUPERARE_CONTRACT, SUPERARE_CONTRACT_TRANSFER_EVENT } from '
 import { CRYPTO_KITTIES_TRANSFER_EVENT, CRYPTO_KITTIES_CONTRACT } from './contracts';
 import prisma from './prisma';
 import { bigIntMin } from './utils';
+import { syncMirrorPosts } from './providers/mirror';
 
 const syncCryptoKittyTransfers = async () => {
   const chain = Chain.Ethereum;
@@ -104,6 +105,7 @@ const sync = async () => {
   await syncSupeRareTransfers();
   await syncCryptoKittyTransfers();
   await syncERC721Transfers();
+  await syncMirrorPosts();
 
   console.timeEnd('Sync time');
 };

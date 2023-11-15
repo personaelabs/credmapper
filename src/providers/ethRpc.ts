@@ -15,6 +15,13 @@ export const getClient = (chain: DBChain) => {
         chain: chains.zora,
         transport: http('https://rpc.zora.energy'),
       });
+    case DBChain.Optimism:
+      return createPublicClient({
+        chain: chains.optimism,
+        transport: http(
+          `https://opt-mainnet.g.alchemy.com/v2/${process.env['opt-mainnet_ALCHEMY_API_KEY']}`,
+        ),
+      });
     default:
       throw new Error('Invalid chain');
   }

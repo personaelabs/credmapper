@@ -13,6 +13,7 @@ datasource db {
 enum Chain {
   Zora
   Ethereum
+  Optimism
 }
 
 model PurchasedEvent {
@@ -111,4 +112,42 @@ model ERC1155Token {
   updatedAt       DateTime @updatedAt
 
   @@unique([contractAddress, tokenId])
+}
+
+model MirrorPost {
+  digest                String   @id
+  arweaveTx             String
+  owner                 String
+  title                 String
+  body                  String
+  timestamp             DateTime
+  description           String
+  imageURI              String
+  proxyAddress          String
+  symbol                String
+  chain                 Chain
+  originalContentDigest String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([owner])
+}
+
+model TokenBalance {
+  address         String
+  contractAddress String
+  balance         BigInt
+  chain           Chain
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@id([address, contractAddress])
+}
+
+model Address {
+  address    String   @id
+  firstTx    DateTime
+  ethBalance BigInt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

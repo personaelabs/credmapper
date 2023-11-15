@@ -1,6 +1,9 @@
 import { Chain } from '@prisma/client';
-import { TRANSFER_EVENT } from './providers/721';
+import { MIRROR_CLONE_DEPLOYED_EVENT, TRANSFER_EVENT } from './providers/721';
 import { ContractEventInfo } from './types';
+
+export const USDC_CONTRACT_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+export const USDT_CONTRACT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7';
 
 // We have a different `Transfer` event for the CryptoKitties contract
 // because it has a different format from standard ERC-721.
@@ -42,6 +45,14 @@ export const SUPERARE_CONTRACT: ContractEventInfo = {
   deployedBlock: 5364090,
   chain: Chain.Ethereum,
   event: SUPERARE_CONTRACT_TRANSFER_EVENT,
+};
+
+export const MIRROR_FACTORY_CONTRACT: ContractEventInfo = {
+  name: 'Mirror Factory',
+  address: '0x3f2408693cc2e0c8e0bb68f039ceb6deac0ec072',
+  chain: Chain.Optimism,
+  deployedBlock: 97769618,
+  event: MIRROR_CLONE_DEPLOYED_EVENT,
 };
 
 const contracts: ContractEventInfo[] = [

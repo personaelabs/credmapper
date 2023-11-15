@@ -139,3 +139,20 @@ export interface ContractEventInfo {
   deployedBlock: number;
   event: AbiEvent;
 }
+
+export interface MirrorPostData {
+  content: {
+    body: string;
+    timestamp: string;
+    title: string;
+  };
+  digest: string;
+  wnft: {
+    description: string;
+    name: string;
+    owner: Hex;
+    proxyAddress: Hex;
+    symbol: string;
+    imageURI: string;
+  };
+}

@@ -18,6 +18,7 @@
     "@types/node": "^20.8.10",
     "abitype": "0.9.8",
     "alchemy-sdk": "^2.10.1",
+    "arweave": "^1.14.4",
     "axios": "^1.6.0",
     "dotenv": "^16.3.1",
     "prisma": "^5.5.2",

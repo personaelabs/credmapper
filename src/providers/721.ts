@@ -6,9 +6,13 @@ import { syncLogs } from '../lib/syncLogs';
 import { ERC721Metadata } from '../types';
 import { batchRun } from '../utils';
 import ERC721 from './abi/ERC721.json';
+import MirrorFactory from './abi/MirrorFactory.json';
 import { AbiEvent } from 'abitype';
 
 export const TRANSFER_EVENT = ERC721.find((abi) => abi.name === 'Transfer') as AbiEvent;
+export const MIRROR_CLONE_DEPLOYED_EVENT = MirrorFactory.find(
+  (abi) => abi.name === 'CloneDeployed',
+) as AbiEvent;
 
 // Sync metadata of 721 tokens minted by Farcaster users.
 // (We don't sync metadata of 721 tokens that haven't been minted by Farcaster users)
