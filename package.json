@@ -5,7 +5,7 @@
   "scripts": {
     "db:start": "docker-compose up -d && sleep 1 && pnpm migrate:dev",
     "migrate:dev": "pnpm exec prisma migrate dev",
-    "migrate:prod": "pnpm exec prisma migrate deploy",
+    "migrate:prod": "pnpm prisma generate && pnpm exec prisma migrate deploy",
     "sync": "pnpm ts-node ./src/sync.ts",
     "index": "pnpm ts-node ./src/index.ts",
     "build": "tsc"
