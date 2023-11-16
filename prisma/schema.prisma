@@ -127,6 +127,7 @@ model MirrorPost {
   symbol                String
   chain                 Chain
   originalContentDigest String
+  blockNumber           BigInt   @default(0)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -144,10 +145,9 @@ model TokenBalance {
   @@id([address, contractAddress])
 }
 
-model Address {
-  address    String   @id
-  firstTx    DateTime
-  ethBalance BigInt
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+model TxCount {
+  address   String   @id
+  txCount   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

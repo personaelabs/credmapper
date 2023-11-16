@@ -7,6 +7,8 @@ import { CRYPTO_KITTIES_TRANSFER_EVENT, CRYPTO_KITTIES_CONTRACT } from './contra
 import prisma from './prisma';
 import { bigIntMin } from './utils';
 import { syncMirrorPosts } from './providers/mirror';
+import { syncTxCount } from './providers/txCount';
+import { Hex } from 'viem';
 
 const syncCryptoKittyTransfers = async () => {
   const chain = Chain.Ethereum;
@@ -102,10 +104,24 @@ const sync = async () => {
   console.time('Sync time');
 
   await syncUsers();
-  await syncSupeRareTransfers();
-  await syncCryptoKittyTransfers();
-  await syncERC721Transfers();
+
+  // Stop synching the followings fow now.
+  // await syncSupeRareTransfers();
+  // await syncCryptoKittyTransfers();
+  // await syncERC721Transfers();
   await syncMirrorPosts();
+
+  // Sync the transaction count of Mirror authors.
+  const mirrorAuthors = await prisma.mirrorPost.findMany({
+    distinct: ['owner'],
+  });
+
+  await syncTxCount(mirrorAuthors.map((author) => author.owner as Hex));
+
+  // Sync the transaction count of Connected addresses.
+  const connectedAddresses = await prisma.connectedAddress.findMany();
+
+  await syncTxCount(connectedAddresses.map((address) => address.address as Hex));
 
   console.timeEnd('Sync time');
 };

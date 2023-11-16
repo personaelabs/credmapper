@@ -156,3 +156,8 @@ export interface MirrorPostData {
     imageURI: string;
   };
 }
+
+export interface ArweaveTag {
+  name: string;
+  value: string;
+}

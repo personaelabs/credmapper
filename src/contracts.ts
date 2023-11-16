@@ -51,7 +51,7 @@ export const MIRROR_FACTORY_CONTRACT: ContractEventInfo = {
   name: 'Mirror Factory',
   address: '0x3f2408693cc2e0c8e0bb68f039ceb6deac0ec072',
   chain: Chain.Optimism,
-  deployedBlock: 97769618,
+  deployedBlock: 95875635,
   event: MIRROR_CLONE_DEPLOYED_EVENT,
 };
 
