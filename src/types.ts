@@ -1,4 +1,4 @@
-import { Chain } from '@prisma/client';
+import { Chain, Cred } from '@prisma/client';
 import { AbiEvent } from 'abitype';
 import { Hex } from 'viem';
 
@@ -160,4 +160,64 @@ export interface MirrorPostData {
 export interface ArweaveTag {
   name: string;
   value: string;
+}
+
+export interface LensUsersQueryResult {
+  profile_id: string;
+  addresses: Hex[];
+}
+
+export interface GetCastsOptions {
+  fids: bigint[];
+  startDate: Date;
+  endDate: Date;
+}
+
+export interface CastEmbed {
+  url: string;
+}
+
+export interface CastsQueryResult {
+  timestamp: Date;
+  text: string;
+  hash: Buffer;
+  parent_fid: bigint | null;
+  fid: bigint;
+  parent_url: string | null;
+  embeds: CastEmbed[];
+}
+
+export interface UsernameQueryResult {
+  fid: bigint;
+  value: string;
+}
+
+export interface CastData {
+  fid: bigint;
+  text: string;
+  timestamp: Date;
+  hash: Buffer;
+  username: string;
+  embeds: CastEmbed[];
+}
+
+export interface SyncPackagedCredOptions {
+  cred: Cred;
+  credibleAddresses: Hex[];
+  startDate: Date;
+  endDate: Date;
+}
+
+export interface ParsedLensPost {
+  publicationUrl: string;
+}
+
+export interface ParsedCast {
+  text: string;
+  timestamp: Date;
+  hash: Hex;
+  username: string;
+  ogpImage: string;
+  images: string[];
+  address: Hex;
 }

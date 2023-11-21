@@ -10,10 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Cred {
+  Over100Txs
+}
+
 enum Chain {
   Zora
   Ethereum
   Optimism
+}
+
+enum Venue {
+  Farcaster
+  Lens
 }
 
 model PurchasedEvent {
@@ -147,13 +156,48 @@ model TokenBalance {
 
 model TxCount {
   address   String   @id
+  venue     Venue
   txCount   Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model TGChat {
-  chatId    String   @id
+  chatId              String             @id
+  venues              Venue[]            @default([Farcaster, Lens])
+  dailyUpdatesEnabled Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  PackagedCredSent    PackagedCredSent[]
+}
+
+model LensUserAddress {
+  profileId String   @id
+  address   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PackagedCred {
+  id               String             @id
+  cred             Cred
+  data             Json
+  address          String
+  venue            Venue
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  PackagedCredSent PackagedCredSent[]
+}
+
+// Packaged cred sent to a chat. This is used to ensure idempotence.
+model PackagedCredSent {
+  packagedCredId String
+  chatId         String
+  packagedCred   PackagedCred @relation(fields: [packagedCredId], references: [id])
+  chat           TGChat       @relation(fields: [chatId], references: [chatId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([packagedCredId, chatId])
 }

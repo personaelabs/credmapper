@@ -1,127 +1,84 @@
-import { sync721Tokens, syncTransferEvents } from './providers/721';
-import { Chain } from '@prisma/client';
-import { TRANSFER_EVENT } from './providers/721';
-import { syncUsers } from './providers/farcaster';
-import contracts, { SUPERARE_CONTRACT, SUPERARE_CONTRACT_TRANSFER_EVENT } from './contracts';
-import { CRYPTO_KITTIES_TRANSFER_EVENT, CRYPTO_KITTIES_CONTRACT } from './contracts';
+import { Cred, Venue } from '@prisma/client';
+import { getCasts, syncFcUsers } from './providers/farcaster';
 import prisma from './prisma';
-import { bigIntMin } from './utils';
-import { syncMirrorPosts } from './providers/mirror';
 import { syncTxCount } from './providers/txCount';
 import { Hex } from 'viem';
-
-const syncCryptoKittyTransfers = async () => {
-  const chain = Chain.Ethereum;
-
-  const latestEvent = await prisma.transferEvent.findFirst({
-    where: {
-      contractAddress: CRYPTO_KITTIES_CONTRACT.address,
-    },
-    orderBy: {
-      blockNumber: 'asc',
-    },
-    select: {
-      blockNumber: true,
-    },
-  });
-
-  const fromBlock = BigInt(latestEvent?.blockNumber || CRYPTO_KITTIES_CONTRACT.deployedBlock);
-
-  await syncTransferEvents(
-    chain,
-    [CRYPTO_KITTIES_CONTRACT.address],
-    CRYPTO_KITTIES_TRANSFER_EVENT,
-    fromBlock,
-  );
-};
-
-const syncSupeRareTransfers = async () => {
-  const chain = Chain.Ethereum;
-
-  const latestEvent = await prisma.transferEvent.findFirst({
-    where: {
-      contractAddress: SUPERARE_CONTRACT.address,
-    },
-    orderBy: {
-      blockNumber: 'asc',
-    },
-    select: {
-      blockNumber: true,
-    },
-  });
-
-  const fromBlock = BigInt(latestEvent?.blockNumber || SUPERARE_CONTRACT.deployedBlock);
-
-  await syncTransferEvents(
-    chain,
-    [SUPERARE_CONTRACT.address],
-    SUPERARE_CONTRACT_TRANSFER_EVENT,
-    fromBlock,
-  );
-};
-
-const syncERC721Transfers = async () => {
-  const chain = Chain.Ethereum;
-
-  // 1. Determine what block height to start syncing from.
-
-  // Get the latest synched block number for each contract.
-  const latestEvents = await prisma.transferEvent.groupBy({
-    by: ['contractAddress'],
-    _max: {
-      blockNumber: true,
-    },
-    where: {
-      chain,
-    },
-  });
-
-  const synchedContracts = latestEvents.map((event) => event.contractAddress);
-
-  // Get the contracts that have never been synced.
-  const unsynchedContracts = contracts.filter(
-    (contract) => !synchedContracts.includes(contract.address),
-  );
-
-  // Get the smallest block number from `unsynchedContracts` and `latestEvents`.
-  const fromBlock = bigIntMin(
-    ...unsynchedContracts.map((contract) => BigInt(contract.deployedBlock)),
-    ...latestEvents.map((event) => event._max.blockNumber as bigint),
-  );
-
-  // Sync all transfer events
-  await syncTransferEvents(
-    chain,
-    contracts.map((contract) => contract.address),
-    TRANSFER_EVENT,
-    fromBlock,
-  );
-
-  await sync721Tokens(chain);
-};
+import { getLensUsers } from './lens';
+import { syncPackagesCred } from './cred';
 
 const sync = async () => {
   console.time('Sync time');
 
-  await syncUsers();
+  /*
+  // #########################
+  // 1. Sync Lens user profiles
+  // #########################
 
-  // Stop synching the followings fow now.
-  // await syncSupeRareTransfers();
-  // await syncCryptoKittyTransfers();
-  // await syncERC721Transfers();
-  await syncMirrorPosts();
+  const lensUsers = await getLensUsers();
 
-  // Sync the transaction count of Mirror authors.
-  const mirrorAuthors = await prisma.mirrorPost.findMany({
-    distinct: ['owner'],
+  // Save Lens users to the database.
+  const createLensUsersData = [];
+  for (const lensUser of lensUsers) {
+    for (const address of lensUser.addresses) {
+      createLensUsersData.push({
+        profileId: lensUser.profile_id,
+        address: address.toLowerCase(),
+      });
+    }
+  }
+
+  await prisma.lensUserAddress.createMany({
+    data: createLensUsersData,
+    skipDuplicates: true,
   });
 
-  await syncTxCount(mirrorAuthors.map((author) => author.owner as Hex));
+  // Get transaction count of Lens users.
 
-  // Sync the transaction count of Connected addresses.
+  await syncTxCount(lensUsers.map((user) => user.addresses).flat(), Venue.Lens);
+
+  // #########################
+  // 2. Sync Farcaster user profiles
+  // #########################
+
+  await syncFcUsers();
+
   const connectedAddresses = await prisma.connectedAddress.findMany();
 
-  await syncTxCount(connectedAddresses.map((address) => address.address as Hex));
+  // Sync the transaction count of Connected addresses.
+  await syncTxCount(
+    connectedAddresses.map((address) => address.address as Hex),
+    Venue.Farcaster,
+  );
+
+  // #########################
+  // 3. Save the latest packaged creds
+  // #########################
+  */
+
+  // Get all FIDs with over 100 txs.
+
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Adds one day in milliseconds
+
+  const credibleAddresses = (
+    await prisma.txCount.findMany({
+      select: {
+        address: true,
+      },
+      where: {
+        txCount: {
+          gt: 100,
+        },
+      },
+    })
+  ).map((address) => address.address as Hex);
+
+  await syncPackagesCred({
+    cred: Cred.Over100Txs,
+    credibleAddresses,
+    startDate: yesterday,
+    endDate: now,
+  });
 
   console.timeEnd('Sync time');
 };

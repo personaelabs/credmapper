@@ -4,6 +4,10 @@ import {
   UserDataQueryResult,
   ConnectedAddressesQueryResults,
   DeletedAddressesQueryResults,
+  GetCastsOptions,
+  CastsQueryResult,
+  UsernameQueryResult,
+  CastData,
 } from '../types';
 import { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../prisma';
@@ -115,7 +119,7 @@ const getDeletedAddresses = async (): Promise<DeletedAddressesQueryResults[]> =>
   return result;
 };
 
-export const syncUsers = async () => {
+export const syncFcUsers = async () => {
   // Get deleted connections
   const deletedConnections = await getDeletedAddresses();
 
@@ -180,4 +184,46 @@ export const syncUsers = async () => {
     skipDuplicates: true,
   });
   console.timeEnd('Insert connected addresses');
+};
+
+export const getCasts = async (options: GetCastsOptions): Promise<CastData[]> => {
+  const fids = Prisma.join(options.fids);
+
+  const castsQueryResult = await fcReplicaClient.$queryRaw<CastsQueryResult[]>`
+      SELECT
+          "timestamp",
+          "text",
+          "hash",
+          "parent_fid",
+          "fid",
+          "parent_url",
+          "embeds"
+      FROM
+          casts
+      WHERE deleted_at IS NULL
+      AND fid in (${fids})
+      AND LENGTH("text") > 100
+      AND "parent_hash" IS NULL
+      AND "timestamp" BETWEEN ${options.startDate} AND ${options.endDate}
+      ORDER BY
+      "timestamp" DESC
+      LIMIT 20
+   `;
+
+  const usernames = await fcReplicaClient.$queryRaw<UsernameQueryResult[]>`
+      SELECT
+      fid,
+      "value"
+      FROM
+        user_data
+      WHERE
+      "type" = 6
+    `;
+
+  const casts = castsQueryResult.map((cast) => ({
+    ...cast,
+    username: usernames.find((username) => username.fid === cast.fid)?.value || '',
+  }));
+
+  return casts;
 };
