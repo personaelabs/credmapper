@@ -7,15 +7,19 @@ import {
 } from '../types';
 import { Hex } from 'viem';
 
+// TODO: Fix broken auth
+/*
 const bigquery = new BigQuery({
   credentials: {
     private_key: process.env.GCP_PRIVATE_KEY,
     client_email: process.env.GCP_CLIENT_EMAIL,
   },
 });
+*/
 
 // Execute a query on the BigQuery database
 const execQuery = async <T>(query: string): Promise<T[]> => {
+  /*
   // For all options, see https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs/query
   const options = {
     query: query,
@@ -28,6 +32,8 @@ const execQuery = async <T>(query: string): Promise<T[]> => {
   // Wait for the query to finish
   const [rows] = await job.getQueryResults();
   return rows;
+  */
+  return [];
 };
 
 // Get Lens users from the BigQuery database
