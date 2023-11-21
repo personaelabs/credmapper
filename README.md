@@ -11,15 +11,13 @@ Create `packages/indexer/.env`
 ```
 DATABASE_URL=postgres://dev:password@localhost:5432/traitmapper
 ALCHEMY_API_KEY=<your eth mainnet alchemy api key>
-GCP_PRIVATE_KEY=<your gcp private key>
-GCP_CLIENT_EMAIL=<your gcp client email>
 FARCASTER_REPLICA_DB_URL=<farcaster replica db url>
 ```
 
 ### 2. Run the indexer
 
 ```
-pnpm indexer:sync
+pnpm indexer:syncUsers && pnpm indexer:syncCred
 ```
 
 ## Telegram Bot
