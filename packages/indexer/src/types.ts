@@ -219,8 +219,8 @@ export interface ParsedCast {
   timestamp: Date;
   hash: Hex;
   username: string;
-  ogpImage: string;
-  images: string[];
+  ogpImage: Buffer;
+  images: Buffer[];
   parentUrl: string | null;
   address: Hex;
 }

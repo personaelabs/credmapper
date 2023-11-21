@@ -12,6 +12,13 @@ const syncPackagesLensPosts = async (options: SyncPackagedCredOptions) => {
   // TBD
 };
 
+const getImageBytes = async (url: string): Promise<Buffer> => {
+  const { data } = await axios.get<Buffer>(url, {
+    responseType: 'arraybuffer',
+  });
+  return data;
+};
+
 // Fetch and save Farcaster casts filtered by the given options.
 const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
   // Get Farcaster connected addresses that have many transactions
@@ -27,17 +34,13 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
 
   const fids = [...new Set(connectedAccountsWithManyTxs.map((address) => BigInt(address.fid)))];
 
-  console.time('get casts');
   const casts = await getCasts({
     fids,
     startDate: options.startDate,
     endDate: options.endDate,
   });
-  console.time('get casts');
 
   console.log(`Found ${casts.length} casts`);
-
-  console.time('parse casts');
 
   await batchRun(
     async (casts) => {
@@ -66,11 +69,13 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
                   timestamp: cast.timestamp,
                   hash: `0x${cast.hash.toString('hex')}`,
                   username: cast.username,
-                  ogpImage: ogImage,
+                  ogpImage: await getImageBytes(ogImage),
                   // Only acknowledge image embeds for now
-                  images: cast.embeds
-                    .filter((embed) => /(png|jpg|jpeg|svg)/.test(embed.url))
-                    .map((embed) => embed.url),
+                  images: await Promise.all(
+                    cast.embeds
+                      .filter((embed) => /(png|jpg|jpeg|svg)/.test(embed.url))
+                      .map(async (embed) => await getImageBytes(embed.url)),
+                  ),
                   parentUrl: cast.parent_url,
                 };
               }

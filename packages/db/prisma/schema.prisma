@@ -166,6 +166,7 @@ model TGChat {
   chatId              String             @id
   venues              Venue[]            @default([Farcaster, Lens])
   dailyUpdatesEnabled Boolean            @default(true)
+  canceled            Boolean            @default(false)
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   PackagedCastSent    PackagedCastSent[]
@@ -186,8 +187,8 @@ model PackagedCast {
   username         String
   text             String
   timestamp        DateTime
-  images           String[]
-  ogpImage         String
+  images           Bytes[]
+  ogpImage         Bytes
   hash             String
   parentUrl        String?
   createdAt        DateTime           @default(now())
