@@ -1,12 +1,12 @@
 import { Cred, Venue } from '@prisma/client';
-import { syncFcUsers } from './providers/farcaster';
-import prisma from './prisma';
-import { syncTxCount } from './providers/txCount';
+import { syncFcUsers } from '../providers/farcaster';
+import prisma from '../prisma';
+import { syncTxCount } from '../providers/txCount';
 import { Hex } from 'viem';
-import { getLensUsers } from './providers/lens';
-import { syncPackagesCred } from './cred';
+import { getLensUsers } from '../providers/lens';
+import { syncPackagesCred } from '../cred';
 
-const sync = async () => {
+const syncUsers = async () => {
   console.time('Sync time');
 
   // #########################
@@ -49,36 +49,7 @@ const sync = async () => {
     Venue.Farcaster,
   );
 
-  // #########################
-  // 3. Save the latest packaged cred
-  // #########################
-
-  const now = new Date();
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Adds one day in milliseconds
-
-  // Get all addresses with over 100 txs.
-  const credibleAddresses = (
-    await prisma.txCount.findMany({
-      select: {
-        address: true,
-      },
-      where: {
-        txCount: {
-          gt: 100,
-        },
-      },
-    })
-  ).map((address) => address.address as Hex);
-
-  // Save the latest packaged cred.
-  await syncPackagesCred({
-    cred: Cred.Over100Txs,
-    credibleAddresses,
-    startDate: yesterday,
-    endDate: now,
-  });
-
   console.timeEnd('Sync time');
 };
 
-sync();
+syncUsers();
