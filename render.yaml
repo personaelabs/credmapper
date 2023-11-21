@@ -9,6 +9,10 @@ services:
     schedule: "0 0 * * *"
     buildCommand: pnpm -F db migrate:prod
     startCommand: pnpm -F indexer sync
+    buildFilter:
+      paths:
+      - packages/indexer/**
+      - packages/db/**
     envVars:
       - key: DATABASE_URL
         fromDatabase:
