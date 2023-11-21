@@ -221,3 +221,27 @@ export interface ParsedCast {
   images: string[];
   address: Hex;
 }
+
+export interface GetLensPostQueryResult {
+  publication_id: string;
+  profile_id: string;
+  content_uri: string;
+  block_timestamp: Date;
+  tx_hash: string;
+}
+
+export interface LensPostData {
+  lens: {
+    content: string;
+    attachments?: {
+      item: string;
+      type: string;
+    }[];
+  };
+}
+
+export interface GetLensPostsOptions {
+  profileIds: string[];
+  startDate: Date;
+  endDate: Date;
+}

@@ -9,7 +9,6 @@ import { syncPackagesCred } from './cred';
 const sync = async () => {
   console.time('Sync time');
 
-  /*
   // #########################
   // 1. Sync Lens user profiles
   // #########################
@@ -51,15 +50,13 @@ const sync = async () => {
   );
 
   // #########################
-  // 3. Save the latest packaged creds
+  // 3. Save the latest packaged cred
   // #########################
-  */
-
-  // Get all FIDs with over 100 txs.
 
   const now = new Date();
   const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Adds one day in milliseconds
 
+  // Get all addresses with over 100 txs.
   const credibleAddresses = (
     await prisma.txCount.findMany({
       select: {
@@ -73,6 +70,7 @@ const sync = async () => {
     })
   ).map((address) => address.address as Hex);
 
+  // Save the latest packaged cred.
   await syncPackagesCred({
     cred: Cred.Over100Txs,
     credibleAddresses,

@@ -87,5 +87,6 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
 };
 
 export const syncPackagesCred = async (options: SyncPackagedCredOptions) => {
+  await syncPackagesLensPosts(options);
   await syncPackagedCasts(options);
 };
