@@ -2,6 +2,7 @@ import bot from './bot';
 import prisma from './prisma';
 import { Cred, PackagedCast, Venue } from '@prisma/client';
 import { Input } from 'telegraf';
+import channels from '../channels.json';
 
 // Send image with a caption of the cast url and caster address
 const sendWithCaption = async (chatId: string, image: Buffer, cast: PackagedCast) => {
@@ -28,13 +29,16 @@ const sendWithCaption = async (chatId: string, image: Buffer, cast: PackagedCast
 };
 
 // Send casts to chats
-export const sendPackagedCasts = async (chatIds: string[]) => {
+export const sendPackagedCasts = async (chatIds: string[], channelId?: string) => {
+  const channelUrl = channels.find((c) => c.channel_id === channelId)?.parent_url;
+  console.log({ channelUrl });
   for (const chatId of chatIds) {
     // Get all casts that haven't been sent to `chatId`
     const unsentPackagedCast = await prisma.packagedCast.findMany({
       include: { PackagedCastSent: true },
       where: {
         cred: Cred.Over100Txs,
+        parentUrl: channelUrl,
         venue: Venue.Farcaster,
         PackagedCastSent: {
           none: {
@@ -42,7 +46,7 @@ export const sendPackagedCasts = async (chatIds: string[]) => {
           },
         },
       },
-      take: 5,
+      take: 3,
     });
 
     if (unsentPackagedCast.length === 0) {

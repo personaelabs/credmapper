@@ -75,7 +75,8 @@ bot.command('enabledaily', async (ctx) => {
 
 bot.command('fetch', async (ctx) => {
   const chatId = ctx.chat.id.toString();
-  await sendPackagedCasts([chatId]);
+  const channelId = ctx.message.text.replace('/fetch', '').trim();
+  await sendPackagedCasts([chatId], channelId);
 
   await ctx.reply('use /fetch to fetch more');
 });
