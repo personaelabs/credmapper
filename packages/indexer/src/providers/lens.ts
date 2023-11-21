@@ -4,7 +4,7 @@ import {
   GetLensPostQueryResult,
   ParsedLensPost,
   GetLensPostsOptions,
-} from './types';
+} from '../types';
 import { Hex } from 'viem';
 
 const bigquery = new BigQuery();

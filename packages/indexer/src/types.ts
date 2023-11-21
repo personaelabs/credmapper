@@ -11,6 +11,7 @@ export interface UserProfile {
   username: string;
   followersCount: number;
 }
+
 export interface UserDataQueryResult {
   fid: bigint;
   value: string;

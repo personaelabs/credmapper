@@ -1,0 +1,25 @@
+{
+  "name": "indexer",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "sync": "pnpm ts-node ./src/sync.ts",
+    "check": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/bigquery": "^7.3.0",
+    "@prisma/client": "4.5.0",
+    "@types/node": "^20.8.10",
+    "abitype": "0.9.8",
+    "alchemy-sdk": "^2.10.1",
+    "axios": "^1.6.0",
+    "cheerio": "1.0.0-rc.12",
+    "dotenv": "^16.3.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2",
+    "viem": "^1.18.4"
+  }
+}

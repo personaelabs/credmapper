@@ -1,0 +1,20 @@
+{
+  "name": "@personaelabs/db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "pnpm down && docker-compose up -d && pnpm migrate:dev",
+    "down": "docker-compose down",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:prod": "prisma generate && prisma migrate deploy",
+    "build": "prisma generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "4.5.0",
+    "prisma": "4.5.0"
+  }
+}

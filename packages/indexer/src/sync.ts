@@ -1,9 +1,9 @@
 import { Cred, Venue } from '@prisma/client';
-import { getCasts, syncFcUsers } from './providers/farcaster';
+import { syncFcUsers } from './providers/farcaster';
 import prisma from './prisma';
 import { syncTxCount } from './providers/txCount';
 import { Hex } from 'viem';
-import { getLensUsers } from './lens';
+import { getLensUsers } from './providers/lens';
 import { syncPackagesCred } from './cred';
 
 const sync = async () => {

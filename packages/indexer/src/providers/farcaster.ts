@@ -14,7 +14,11 @@ import prisma from '../prisma';
 
 // A client that points to the Farcaster replica database
 const fcReplicaClient = new PrismaClient({
-  datasourceUrl: process.env.FARCASTER_REPLICA_DB_URL,
+  datasources: {
+    db: {
+      url: process.env.FARCASTER_REPLICA_DB_URL,
+    },
+  },
 });
 
 const userDataTypes = [
