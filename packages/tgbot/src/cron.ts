@@ -1,13 +1,43 @@
 import axios from 'axios';
 import bot from './bot';
 import prisma from './prisma';
-import { Cred, Venue } from '@prisma/client';
-import { ParsedCast } from './types';
+import { Cred, PackagedCred, Venue } from '@prisma/client';
+import { ParsedCast, ParsedLensPost } from './types';
 import { Input } from 'telegraf';
+
+const getUnsentPackagedCred = async (
+  venue: Venue,
+  cred: Cred,
+  chatId: string,
+): Promise<PackagedCred[]> => {
+  return await prisma.packagedCred.findMany({
+    include: { PackagedCredSent: true },
+    where: {
+      cred,
+      venue,
+      PackagedCredSent: {
+        none: {
+          chatId,
+        },
+      },
+    },
+  });
+};
 
 export const sendPackagedLensPosts = async (chatIds: string[]) => {
   for (const chatId of chatIds) {
-    // TBD
+    // Get all casts that haven't been sent to `chatId`
+    const unsentPackagedPosts = await getUnsentPackagedCred(Venue.Lens, Cred.Over100Txs, chatId);
+
+    if (unsentPackagedPosts.length === 0) {
+      await bot.telegram.sendMessage(chatId, `You're up to date.`);
+      continue;
+    }
+
+    for (const packagedPost of unsentPackagedPosts) {
+      const post = JSON.parse(packagedPost.data?.toString() as string) as ParsedLensPost;
+      await bot.telegram.sendMessage(chatId, post.publicationUrl);
+    }
   }
 };
 
@@ -17,18 +47,11 @@ export const sendPackagedCasts = async (chatIds: string[]) => {
     console.time('get unsent casts');
 
     // Get all casts that haven't been sent to `chatId`
-    const unsentPackagedCast = await prisma.packagedCred.findMany({
-      include: { PackagedCredSent: true },
-      where: {
-        cred: Cred.Over100Txs,
-        venue: Venue.Farcaster,
-        PackagedCredSent: {
-          none: {
-            chatId,
-          },
-        },
-      },
-    });
+    const unsentPackagedCast = await getUnsentPackagedCred(
+      Venue.Farcaster,
+      Cred.Over100Txs,
+      chatId,
+    );
     console.timeEnd('get unsent casts');
 
     if (unsentPackagedCast.length === 0) {
