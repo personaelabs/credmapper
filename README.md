@@ -11,7 +11,8 @@ Create `packages/indexer/.env`
 ```
 DATABASE_URL=postgres://dev:password@localhost:5432/traitmapper
 ALCHEMY_API_KEY=<your eth mainnet alchemy api key>
-GOOGLE_APPLICATION_CREDENTIALS=<path to your google service account key>
+GCP_PRIVATE_KEY=<your gcp private key>
+GCP_CLIENT_EMAIL=<your gcp client email>
 FARCASTER_REPLICA_DB_URL=<farcaster replica db url>
 ```
 
