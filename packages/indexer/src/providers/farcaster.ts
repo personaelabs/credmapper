@@ -211,7 +211,6 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastData[]> =>
       AND "timestamp" BETWEEN ${options.startDate} AND ${options.endDate}
       ORDER BY
       "timestamp" DESC
-      LIMIT 20
    `;
 
   const usernames = await fcReplicaClient.$queryRaw<UsernameQueryResult[]>`

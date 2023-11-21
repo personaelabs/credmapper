@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "sync": "pnpm ts-node ./src/sync.ts",
+    "syncUsers": "pnpm ts-node ./src/sync/sync.ts",
+    "syncPackagedCred": "pnpm ts-node ./src/sync/syncPackagedCred.ts",
     "check": "tsc --noEmit"
   },
   "keywords": [],

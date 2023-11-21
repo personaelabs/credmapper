@@ -199,6 +199,7 @@ export interface CastData {
   timestamp: Date;
   hash: Buffer;
   username: string;
+  parent_url: string | null;
   embeds: CastEmbed[];
 }
 
@@ -220,6 +221,7 @@ export interface ParsedCast {
   username: string;
   ogpImage: string;
   images: string[];
+  parentUrl: string | null;
   address: Hex;
 }
 

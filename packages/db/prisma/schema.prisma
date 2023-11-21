@@ -168,7 +168,7 @@ model TGChat {
   dailyUpdatesEnabled Boolean            @default(true)
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
-  PackagedCredSent    PackagedCredSent[]
+  PackagedCastSent    PackagedCastSent[]
 }
 
 model LensUserAddress {
@@ -178,26 +178,32 @@ model LensUserAddress {
   updatedAt DateTime @updatedAt
 }
 
-model PackagedCred {
+model PackagedCast {
   id               String             @id
   cred             Cred
-  data             Json
-  address          String
   venue            Venue
+  address          String
+  username         String
+  text             String
+  timestamp        DateTime
+  images           String[]
+  ogpImage         String
+  hash             String
+  parentUrl        String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  PackagedCredSent PackagedCredSent[]
+  PackagedCastSent PackagedCastSent[]
 }
 
 // Packaged cred sent to a chat. This is used to ensure idempotence.
-model PackagedCredSent {
-  packagedCredId String
+model PackagedCastSent {
+  packagedCastId String
   chatId         String
-  packagedCred   PackagedCred @relation(fields: [packagedCredId], references: [id])
+  packagedCast   PackagedCast @relation(fields: [packagedCastId], references: [id])
   chat           TGChat       @relation(fields: [chatId], references: [chatId])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([packagedCredId, chatId])
+  @@unique([packagedCastId, chatId])
 }

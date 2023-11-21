@@ -1,45 +1,9 @@
 import axios from 'axios';
 import bot from './bot';
 import prisma from './prisma';
-import { Cred, PackagedCred, Venue } from '@prisma/client';
+import { Cred, Venue } from '@prisma/client';
 import { ParsedCast, ParsedLensPost } from './types';
 import { Input } from 'telegraf';
-
-const getUnsentPackagedCred = async (
-  venue: Venue,
-  cred: Cred,
-  chatId: string,
-): Promise<PackagedCred[]> => {
-  return await prisma.packagedCred.findMany({
-    include: { PackagedCredSent: true },
-    where: {
-      cred,
-      venue,
-      PackagedCredSent: {
-        none: {
-          chatId,
-        },
-      },
-    },
-  });
-};
-
-export const sendPackagedLensPosts = async (chatIds: string[]) => {
-  for (const chatId of chatIds) {
-    // Get all casts that haven't been sent to `chatId`
-    const unsentPackagedPosts = await getUnsentPackagedCred(Venue.Lens, Cred.Over100Txs, chatId);
-
-    if (unsentPackagedPosts.length === 0) {
-      await bot.telegram.sendMessage(chatId, `You're up to date.`);
-      continue;
-    }
-
-    for (const packagedPost of unsentPackagedPosts) {
-      const post = JSON.parse(packagedPost.data?.toString() as string) as ParsedLensPost;
-      await bot.telegram.sendMessage(chatId, post.publicationUrl);
-    }
-  }
-};
 
 // Send casts to chats
 export const sendPackagedCasts = async (chatIds: string[]) => {
@@ -47,11 +11,20 @@ export const sendPackagedCasts = async (chatIds: string[]) => {
     console.time('get unsent casts');
 
     // Get all casts that haven't been sent to `chatId`
-    const unsentPackagedCast = await getUnsentPackagedCred(
-      Venue.Farcaster,
-      Cred.Over100Txs,
-      chatId,
-    );
+    const unsentPackagedCast = await prisma.packagedCast.findMany({
+      include: { PackagedCastSent: true },
+      where: {
+        cred: Cred.Over100Txs,
+        venue: Venue.Farcaster,
+        PackagedCastSent: {
+          none: {
+            chatId,
+          },
+        },
+      },
+      take: 20,
+    });
+
     console.timeEnd('get unsent casts');
 
     if (unsentPackagedCast.length === 0) {
@@ -62,8 +35,7 @@ export const sendPackagedCasts = async (chatIds: string[]) => {
     // TODO: Send out casts without attachments asynchronously first
     // to lower the perceived latency
 
-    for (const packagedCast of unsentPackagedCast) {
-      const cast = JSON.parse(packagedCast.data?.toString() as string) as ParsedCast;
+    for (const cast of unsentPackagedCast) {
       const images = [cast.ogpImage, ...cast.images];
       const warpcastUrl = `https://warpcast.com/${cast.username}/${cast.hash}`;
 
@@ -99,10 +71,10 @@ export const sendPackagedCasts = async (chatIds: string[]) => {
     }
 
     console.time('save sent casts');
-    await prisma.packagedCredSent.createMany({
+    await prisma.packagedCastSent.createMany({
       data: unsentPackagedCast.map((packagedCast) => ({
         chatId,
-        packagedCredId: packagedCast.id,
+        packagedCastId: packagedCast.id,
       })),
     });
     console.timeEnd('save sent casts');
@@ -123,6 +95,5 @@ export const sendDailyCasts = async () => {
     })
   ).map((chat) => chat.chatId);
 
-  await sendPackagedLensPosts(chatIds);
   await sendPackagedCasts(chatIds);
 };

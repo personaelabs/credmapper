@@ -5,6 +5,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { Cred, Venue } from '@prisma/client';
 import { Hex } from 'viem';
+import { batchRun } from './utils';
 
 // Fetch and save Lens posts filtered by the given options.
 const syncPackagesLensPosts = async (options: SyncPackagedCredOptions) => {
@@ -37,53 +38,71 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
   console.log(`Found ${casts.length} casts`);
 
   console.time('parse casts');
-  const parsedCasts: ParsedCast[] = [];
-  for (const cast of casts) {
-    const castHash = cast.hash.toString('hex');
-    const warpcastUrl = `https://warpcast.com/${cast.username}/0x${castHash}`;
-    console.time('fetch ogp image');
-    const result = await axios.get(warpcastUrl, {
-      headers: {
-        'User-Agent': 'Telegrambot/1.0',
-      },
-    });
-    const $ = cheerio.load(result.data);
-    const ogImage = $('meta[property="og:image"]').attr('content');
-    console.timeEnd('fetch ogp image');
 
-    if (ogImage) {
-      const address = connectedAccountsWithManyTxs.find(
-        (account) => BigInt(account.fid) === cast.fid,
-      )?.address as Hex;
+  await batchRun(
+    async (casts) => {
+      const parsedCasts = (
+        await Promise.all(
+          casts.map(async (cast) => {
+            try {
+              const castHash = cast.hash.toString('hex');
+              const warpcastUrl = `https://warpcast.com/${cast.username}/0x${castHash}`;
+              const result = await axios.get(warpcastUrl, {
+                headers: {
+                  'User-Agent': 'Telegrambot/1.0',
+                },
+              });
+              const $ = cheerio.load(result.data);
+              const ogImage = $('meta[property="og:image"]').attr('content');
 
-      parsedCasts.push({
-        text: cast.text,
-        address,
-        timestamp: cast.timestamp,
-        hash: `0x${cast.hash.toString('hex')}`,
-        username: cast.username,
-        ogpImage: ogImage,
-        // Only acknowledge image embeds for now
-        images: cast.embeds
-          .filter((embed) => /(png|jpg|jpeg|svg)/.test(embed.url))
-          .map((embed) => embed.url),
+              if (ogImage) {
+                const address = connectedAccountsWithManyTxs.find(
+                  (account) => BigInt(account.fid) === cast.fid,
+                )?.address as Hex;
+
+                return {
+                  text: cast.text,
+                  address,
+                  timestamp: cast.timestamp,
+                  hash: `0x${cast.hash.toString('hex')}`,
+                  username: cast.username,
+                  ogpImage: ogImage,
+                  // Only acknowledge image embeds for now
+                  images: cast.embeds
+                    .filter((embed) => /(png|jpg|jpeg|svg)/.test(embed.url))
+                    .map((embed) => embed.url),
+                  parentUrl: cast.parent_url,
+                };
+              }
+            } catch (e) {
+              console.log(e);
+              return null;
+            }
+          }),
+        )
+      ).filter((cast) => cast) as ParsedCast[];
+
+      await prisma.packagedCast.createMany({
+        data: parsedCasts.map((cast) => ({
+          id: cast.hash,
+          address: cast.address,
+          cred: Cred.Over100Txs,
+          venue: Venue.Farcaster,
+          text: cast.text,
+          timestamp: cast.timestamp,
+          username: cast.username,
+          ogpImage: cast.ogpImage,
+          images: cast.images,
+          parentUrl: cast.parentUrl,
+          hash: cast.hash,
+        })),
+        skipDuplicates: true,
       });
-    } else {
-      console.log(`No OGP image found for ${warpcastUrl}`);
-    }
-  }
-  console.timeEnd('parse casts');
-
-  await prisma.packagedCred.createMany({
-    data: parsedCasts.map((cast) => ({
-      id: cast.hash,
-      address: cast.address,
-      cred: Cred.Over100Txs,
-      venue: Venue.Farcaster,
-      data: JSON.stringify(cast),
-    })),
-    skipDuplicates: true,
-  });
+    },
+    casts,
+    'Parse casts',
+    20,
+  );
 };
 
 export const syncPackagesCred = async (options: SyncPackagedCredOptions) => {

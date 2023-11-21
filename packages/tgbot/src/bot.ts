@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Telegraf, session } from 'telegraf';
 import prisma from './prisma';
-import { sendPackagedCasts, sendPackagedLensPosts } from './cron';
+import { sendPackagedCasts } from './cron';
 
 const bot = new Telegraf(process.env.BOT_TOKEN || '');
 
@@ -74,12 +74,8 @@ bot.command('enabledaily', async (ctx) => {
 });
 
 bot.command('fetch', async (ctx) => {
-  console.log('Fetching casts');
-  await ctx.reply('You will receive updates shortly.');
-
   const chatId = ctx.chat.id.toString();
   await sendPackagedCasts([chatId]);
-  await sendPackagedLensPosts([chatId]);
 });
 
 // Enable graceful stop
