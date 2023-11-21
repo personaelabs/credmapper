@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { Telegraf, session } from 'telegraf';
 import prisma from './prisma';
 import { sendPackagedCasts } from './cron';
+import channels from '../channels.json';
 
 const bot = new Telegraf(process.env.BOT_TOKEN || '');
 
@@ -76,9 +77,14 @@ bot.command('enabledaily', async (ctx) => {
 bot.command('fetch', async (ctx) => {
   const chatId = ctx.chat.id.toString();
   const channelId = ctx.message.text.replace('/fetch', '').trim();
-  await sendPackagedCasts([chatId], channelId);
+  const channelUrl = channels.find((c) => c.channel_id === channelId)?.parent_url;
 
-  await ctx.reply('use /fetch to fetch more');
+  if (channelId && !channelUrl) {
+    await ctx.reply(`Cannot find channel with id ${channelId}`);
+  } else {
+    await sendPackagedCasts([chatId], channelUrl);
+    await ctx.reply('use /fetch to fetch more');
+  }
 });
 
 // Enable graceful stop
