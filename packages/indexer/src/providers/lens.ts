@@ -7,7 +7,12 @@ import {
 } from '../types';
 import { Hex } from 'viem';
 
-const bigquery = new BigQuery();
+const bigquery = new BigQuery({
+  credentials: {
+    private_key: process.env.GCP_PRIVATE_KEY,
+    client_email: process.env.GCP_CLIENT_EMAIL,
+  },
+});
 
 // Execute a query on the BigQuery database
 const execQuery = async <T>(query: string): Promise<T[]> => {
