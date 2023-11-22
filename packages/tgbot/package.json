@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "tsx ./src/bot.ts",
+    "bot:dev": "tsx ./src/bot.ts",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

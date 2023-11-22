@@ -165,6 +165,7 @@ model TxCount {
 model TGChat {
   chatId              String             @id
   venues              Venue[]            @default([Farcaster, Lens])
+  channels            String[]           @default([])
   dailyUpdatesEnabled Boolean            @default(true)
   canceled            Boolean            @default(false)
   createdAt           DateTime           @default(now())

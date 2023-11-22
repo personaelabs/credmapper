@@ -8,7 +8,8 @@
     "db:start": "pnpm -F db run start",
     "indexer:syncUsers": "pnpm -F indexer run syncUsers",
     "indexer:syncCred": "pnpm -F indexer run syncPackagedCred",
-    "bot:dev": "pnpm -F tgbot run dev",
+    "bot:dev": "pnpm -F tgbot run bot:dev",
+    "cron:dev": "pnpm -F tgbot run dev",
     "check": "pnpm -r check",
     "prepare": "pnpm -F db build"
   },

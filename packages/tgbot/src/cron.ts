@@ -2,20 +2,28 @@ import bot from './bot';
 import prisma from './prisma';
 import { Cred, PackagedCast, Venue } from '@prisma/client';
 import { Input } from 'telegraf';
+import channels from '../channels.json';
 
 // Send image with a caption of the cast url and caster address
 const sendWithCaption = async (chatId: string, image: Buffer, cast: PackagedCast) => {
   const warpcastUrl = `https://warpcast.com/${cast.username}/${cast.hash}`;
   const etherscanUrl = `https://etherscan.io/address/${cast.address}`;
 
-  const caption = `[link](${warpcastUrl}) \n[Caster](${etherscanUrl}) has \\> 100 txs on ETH mainnet`;
+  const channelName = channels.find((channel) => channel.parent_url === cast.parentUrl)!.name;
+
+  const caption = `[in ${channelName}](${warpcastUrl}) \n[Caster](${etherscanUrl}) has \\> 100 txs on ETH mainnet\n`;
   await bot.telegram.sendPhoto(chatId, Input.fromBuffer(image), {
     parse_mode: 'MarkdownV2',
     caption,
     caption_entities: [
       {
         type: 'url',
-        offset: 1,
+        offset: `[in `.length,
+        length: channelName.length,
+      },
+      {
+        type: 'url',
+        offset: `[in ${channelName}](`.length,
         length: warpcastUrl.length,
       },
       {
@@ -30,12 +38,28 @@ const sendWithCaption = async (chatId: string, image: Buffer, cast: PackagedCast
 // Send casts to chats
 export const sendPackagedCasts = async (chatIds: string[], channelUrl?: string) => {
   for (const chatId of chatIds) {
+    // Get the channels that the chat is subscribed to
+    const channelIds = (await prisma.tGChat.findFirst({
+      where: {
+        chatId,
+      },
+      select: {
+        channels: true,
+      },
+    }))!.channels;
+
+    const channelUrls = channels
+      .filter((channel) => channelIds.includes(channel.channel_id))
+      .map((channel) => channel.parent_url);
+
     // Get all casts that haven't been sent to `chatId`
     const unsentPackagedCast = await prisma.packagedCast.findMany({
       include: { PackagedCastSent: true },
       where: {
         cred: Cred.Over100Txs,
-        parentUrl: channelUrl,
+        parentUrl: {
+          in: channelUrls,
+        },
         venue: Venue.Farcaster,
         PackagedCastSent: {
           none: {
@@ -43,8 +67,9 @@ export const sendPackagedCasts = async (chatIds: string[], channelUrl?: string) 
           },
         },
       },
-      take: 3,
     });
+
+    console.log(`Sending ${unsentPackagedCast.length} casts to ${chatId}`);
 
     if (unsentPackagedCast.length === 0) {
       await bot.telegram.sendMessage(chatId, `You're up to date.`);
