@@ -209,3 +209,12 @@ model PackagedCastSent {
 
   @@unique([packagedCastId, chatId])
 }
+
+model MessageLog {
+  id      Int    @id @default(autoincrement())
+  chatId  String
+  message String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -7,10 +7,12 @@ import { Command, ContextWithSession } from './types';
 import { handleChannelsAdd, handleChannelsRemove } from './bot/commands/channels';
 import { handleSetUpdatesConfig } from './bot/commands/dailyUpdates';
 import { command, commandsMeta } from './bot/commands/commands';
+import logger from './logger';
 
 const bot = new Telegraf<ContextWithSession>(process.env.BOT_TOKEN || '');
 
 bot.use(session());
+bot.use(logger);
 
 bot.telegram.setMyCommands(commandsMeta);
 
