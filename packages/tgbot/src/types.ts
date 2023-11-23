@@ -1,3 +1,4 @@
+import { Cred } from '@prisma/client';
 import { Context, NarrowedContext } from 'telegraf';
 import { Message, Update } from 'telegraf/types';
 
@@ -17,6 +18,7 @@ export interface ParsedCast {
 
 export enum Command {
   Start = 'start',
+  ListChannels = 'listChannels',
   AddChannels = 'addChannels',
   RemoveChannels = 'removeChannels',
   EnableUpdates = 'enableUpdates',
@@ -31,3 +33,9 @@ export interface ContextWithSession extends Context {
 }
 
 export type MessageContext = NarrowedContext<ContextWithSession, Update.MessageUpdate<Message>>;
+
+export interface CastsFilterOptions {
+  numCasts: number;
+  channelIds: string[] | null;
+  creds: Cred[] | null;
+}

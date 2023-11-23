@@ -1,13 +1,16 @@
 import 'dotenv/config';
 import { Telegraf, session } from 'telegraf';
 import prisma from './prisma';
-import { sendPackagedCasts } from './cron';
-import channels from '../channels.json';
 import { Command, ContextWithSession } from './types';
-import { handleChannelsAdd, handleChannelsRemove } from './bot/commands/channels';
+import {
+  handleChannelsAdd,
+  handleChannelsRemove,
+  handleGetChannels,
+} from './bot/commands/channels';
 import { handleSetUpdatesConfig } from './bot/commands/dailyUpdates';
 import { command, commandsMeta } from './bot/commands/commands';
 import logger from './logger';
+import { sendUnreadCastsToChat } from './cron';
 
 const bot = new Telegraf<ContextWithSession>(process.env.BOT_TOKEN || '');
 
@@ -39,6 +42,10 @@ bot.command(command(Command.Start), async (ctx) => {
   await ctx.reply(`Enter "skip" to skip this step.`);
 });
 
+bot.command(command(Command.ListChannels), async (ctx) => {
+  await handleGetChannels(ctx);
+});
+
 bot.command(command(Command.AddChannels), async (ctx) => {
   await setSessionCommand(ctx, Command.AddChannels);
   await ctx.reply(`Please enter names of the Farcaster channels to subscribe.`);
@@ -59,17 +66,29 @@ bot.command(command(Command.DisableUpdates), async (ctx) => {
   await ctx.reply('Disabled updates');
 });
 
-bot.command('fetch', async (ctx) => {
+bot.command(command(Command.Fetch), async (ctx) => {
   const chatId = ctx.chat.id.toString();
-  const channelId = ctx.message.text.replace('/fetch', '').trim();
-  const channelUrl = channels.find((c) => c.channel_id === channelId)?.parent_url;
+  const text = ctx.message.text;
 
-  if (channelId && !channelUrl) {
-    await ctx.reply(`Cannot find channel with id ${channelId}`);
-  } else {
-    await sendPackagedCasts([chatId], channelUrl);
-    await ctx.reply('use /fetch to fetch more');
-  }
+  const options = text.split(' ');
+  const channelId = options.length > 0 ? options[0] : undefined;
+  const numCasts = options.length > 1 ? parseInt(options[1]) : 5;
+
+  await sendUnreadCastsToChat(chatId, {
+    numCasts,
+    channelIds: channelId ? [channelId] : null,
+    creds: null,
+  });
+
+  // Should we try to sending high-value creddd or not?
+  // Just try curating all of that for now.
+
+  // Send casts to the chat when it appears.
+  // How often does it appear?
+  // Not super often actually.
+
+  // await sendUnreadCastsToChat(chatId, numCasts)
+  await ctx.reply('use /fetch to fetch more');
 });
 
 // On all incoming messages

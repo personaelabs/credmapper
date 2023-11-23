@@ -17,6 +17,11 @@ const commands = [
     description: 'Disable daily updates',
   },
   {
+    key: Command.ListChannels,
+    command: 'channels',
+    description: 'List subscribed channels',
+  },
+  {
     key: Command.AddChannels,
     command: 'subchannels',
     description: 'Subscribe to channels',
@@ -29,7 +34,7 @@ const commands = [
   {
     key: Command.Fetch,
     command: 'fetch',
-    description: 'Fetch the latest updates from credible sources',
+    description: 'Fetch the latest updates',
   },
 ];
 

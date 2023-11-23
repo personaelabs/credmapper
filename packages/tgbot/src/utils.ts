@@ -16,3 +16,7 @@ export const formatListWithAnd = (list: string[]): string => {
 export const getSessionCommand = (ctx: MessageContext): Command | undefined => {
   return ctx.session?.command;
 };
+
+export const pluralize = (text: string, array: any[]) => {
+  return array.length > 1 ? text + 's' : text;
+};
