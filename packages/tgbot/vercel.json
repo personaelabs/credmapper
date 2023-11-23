@@ -1,10 +1,4 @@
 {
-    "crons": [
-      {
-        "path": "/api/cron",
-        "schedule": "0 0 * * *"
-      }
-    ],
     "functions": {
       "src/pages/api/*.ts": {
         "maxDuration": 300

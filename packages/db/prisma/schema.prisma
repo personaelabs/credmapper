@@ -185,13 +185,19 @@ model PackagedCast {
   cred             Cred
   venue            Venue
   address          String
+  displayName      String
   username         String
   text             String
   timestamp        DateTime
-  images           Bytes[]
-  ogpImage         Bytes
+  mentions         BigInt[]
+  mentionPositions Int[]
+  embeds           String[]
+  likesCount       Int                @default(0)
+  recastsCount     Int                @default(0)
+  repliesCount     Int                @default(0)
   hash             String
-  parentUrl        String?
+  parentHash       String?
+  deletedAt        DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   PackagedCastSent PackagedCastSent[]
