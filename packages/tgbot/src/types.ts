@@ -1,4 +1,3 @@
-import { Cred } from '@prisma/client';
 import { Context, NarrowedContext } from 'telegraf';
 import { Message, Update } from 'telegraf/types';
 
@@ -6,7 +5,7 @@ export interface ParsedLensPost {
   publicationUrl: string;
 }
 
-export interface ParsedCast {
+export interface IndexedCast {
   text: string;
   timestamp: Date;
   address: string;
@@ -33,9 +32,3 @@ export interface ContextWithSession extends Context {
 }
 
 export type MessageContext = NarrowedContext<ContextWithSession, Update.MessageUpdate<Message>>;
-
-export interface CastsFilterOptions {
-  numCasts: number;
-  channelIds: string[] | null;
-  creds: Cred[] | null;
-}

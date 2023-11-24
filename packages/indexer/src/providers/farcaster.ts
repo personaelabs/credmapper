@@ -7,7 +7,6 @@ import {
   GetCastsOptions,
   CastsQueryResult,
   UsernameQueryResult,
-  CastData,
 } from '../types';
 import { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../prisma';
@@ -190,9 +189,17 @@ export const syncFcUsers = async () => {
   console.timeEnd('Insert connected addresses');
 };
 
-export const getCasts = async (options: GetCastsOptions): Promise<CastData[]> => {
+export const getCasts = async (
+  options: GetCastsOptions,
+): Promise<
+  ({
+    displayName: string;
+    username: string;
+  } & CastsQueryResult)[]
+> => {
   const fids = Prisma.join(options.fids);
 
+  console.time('Get casts');
   const castsQueryResult = await fcReplicaClient.$queryRaw<CastsQueryResult[]>`
       SELECT
           "timestamp",
@@ -201,18 +208,21 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastData[]> =>
           "parent_fid",
           "fid",
           "parent_url",
+          "mentions",
+          "mentions_positions",
           "embeds"
       FROM
           casts
       WHERE deleted_at IS NULL
       AND fid in (${fids})
-      AND LENGTH("text") > 100
       AND "parent_hash" IS NULL
-      AND "timestamp" BETWEEN ${options.startDate} AND ${options.endDate}
+      AND "timestamp" > ${options.fromDate}
       ORDER BY
       "timestamp" DESC
    `;
+  console.timeEnd('Get casts');
 
+  console.time('Get usernames');
   const usernames = await fcReplicaClient.$queryRaw<UsernameQueryResult[]>`
       SELECT
       fid,
@@ -220,13 +230,29 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastData[]> =>
       FROM
         user_data
       WHERE
-      "type" = 6
+      "type" = 6 AND fid in (${fids})
     `;
+  console.timeEnd('Get usernames');
 
+  console.time('Get display names');
+  const displayNames = await fcReplicaClient.$queryRaw<UsernameQueryResult[]>`
+      SELECT
+      fid,
+      "value"
+      FROM
+        user_data
+      WHERE
+      "type" = 2 AND fid in (${fids})
+    `;
+  console.timeEnd('Get display names');
+
+  console.time('Map casts');
   const casts = castsQueryResult.map((cast) => ({
     ...cast,
     username: usernames.find((username) => username.fid === cast.fid)?.value || '',
+    displayName: displayNames.find((displayName) => displayName.fid === cast.fid)?.value || '',
   }));
+  console.timeEnd('Map casts');
 
   return casts;
 };

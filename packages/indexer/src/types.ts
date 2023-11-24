@@ -1,4 +1,4 @@
-import { Chain, Cred } from '@prisma/client';
+import { Chain } from '@prisma/client';
 import { AbiEvent } from 'abitype';
 import { Hex } from 'viem';
 
@@ -170,8 +170,7 @@ export interface LensUsersQueryResult {
 
 export interface GetCastsOptions {
   fids: bigint[];
-  startDate: Date;
-  endDate: Date;
+  fromDate: Date;
 }
 
 export interface CastEmbed {
@@ -185,6 +184,8 @@ export interface CastsQueryResult {
   parent_fid: bigint | null;
   fid: bigint;
   parent_url: string | null;
+  mentions: bigint[];
+  mentions_positions: number[];
   embeds: CastEmbed[];
 }
 
@@ -193,35 +194,29 @@ export interface UsernameQueryResult {
   value: string;
 }
 
-export interface CastData {
-  fid: bigint;
-  text: string;
-  timestamp: Date;
-  hash: Buffer;
-  username: string;
-  parent_url: string | null;
-  embeds: CastEmbed[];
-}
-
 export interface SyncPackagedCredOptions {
-  cred: Cred;
+  cred: string;
   credibleAddresses: Hex[];
-  startDate: Date;
-  endDate: Date;
+  fromDate: Date;
 }
 
 export interface ParsedLensPost {
   publicationUrl: string;
 }
 
-export interface ParsedCast {
+export interface IndexedCast {
   text: string;
   timestamp: Date;
   hash: Hex;
   username: string;
-  ogpImage: Buffer;
-  images: Buffer[];
-  parentUrl: string | null;
+  displayName: string;
+  embeds: string[];
+  parentHash: string | null;
+  mentions: bigint[];
+  mentionsPositions: number[];
+  likesCount: number;
+  recastsCount: number;
+  repliesCount: number;
   address: Hex;
 }
 

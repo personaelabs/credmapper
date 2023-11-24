@@ -1,4 +1,3 @@
-import { Cred } from '@prisma/client';
 import prisma from '../prisma';
 import { Hex } from 'viem';
 import { syncPackagesCred } from '../cred';
@@ -8,8 +7,7 @@ const syncPackagedCred = async () => {
   // 3. Save the latest packaged cred
   // #########################
 
-  const now = new Date();
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Adds one day in milliseconds
+  const fromDate = new Date('2023-11-15T00:00:00.000Z');
 
   // Get all addresses with over 100 txs.
   const credibleAddresses = (
@@ -27,10 +25,9 @@ const syncPackagedCred = async () => {
 
   // Save the latest packaged cred.
   await syncPackagesCred({
-    cred: Cred.Over100Txs,
+    cred: 'over_100txs',
     credibleAddresses,
-    startDate: yesterday,
-    endDate: now,
+    fromDate,
   });
 };
 

@@ -10,7 +10,6 @@ import {
 import { handleSetUpdatesConfig } from './bot/commands/dailyUpdates';
 import { command, commandsMeta } from './bot/commands/commands';
 import logger from './logger';
-import { sendUnreadCastsToChat } from './cron';
 
 const bot = new Telegraf<ContextWithSession>(process.env.BOT_TOKEN || '');
 
@@ -74,11 +73,13 @@ bot.command(command(Command.Fetch), async (ctx) => {
   const channelId = options.length > 0 ? options[0] : undefined;
   const numCasts = options.length > 1 ? parseInt(options[1]) : 5;
 
+  /*
   await sendUnreadCastsToChat(chatId, {
     numCasts,
     channelIds: channelId ? [channelId] : null,
     creds: null,
   });
+  */
 
   // Should we try to sending high-value creddd or not?
   // Just try curating all of that for now.

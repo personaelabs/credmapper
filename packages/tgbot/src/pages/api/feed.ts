@@ -1,5 +1,5 @@
 import prisma from '@/src/prisma';
-import { Cred, Venue } from '@prisma/client';
+import { Venue } from '@prisma/client';
 import 'dotenv/config';
 import { NextApiRequest, NextApiResponse } from 'next';
 import channels from '@/channels.json';
@@ -14,23 +14,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let where: {
     venue: Venue;
-    cred: Cred;
-    parentUrl?: string;
+    cred: string;
+    parentHash?: string;
   } = {
     venue: Venue.Farcaster,
-    cred: Cred.Over100Txs,
+    cred: 'over_100txs',
   };
 
   if (channelId) {
-    where.parentUrl = channels.find((c) => c.channel_id === channelId)!.parent_url;
+    where.parentHash = channels.find((c) => c.channel_id === channelId)!.parent_url;
   }
 
   const casts = await prisma.packagedCast.findMany({
     select: {
       username: true,
+      displayName: true,
       text: true,
       timestamp: true,
       cred: true,
+      embeds: true,
+      mentionPositions: true,
+      mentions: true,
       parentHash: true,
     },
     where,

@@ -1,4 +1,4 @@
-import { Cred, Venue } from '@prisma/client';
+import { Venue } from '@prisma/client';
 import { syncFcUsers } from '../providers/farcaster';
 import prisma from '../prisma';
 import { syncTxCount } from '../providers/txCount';

@@ -10,10 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Cred {
-  Over100Txs
-}
-
 enum Chain {
   Zora
   Ethereum
@@ -57,12 +53,15 @@ model TransferEvent {
 }
 
 model User {
-  fid                Int                @id
-  username           String
-  displayName        String
-  pfp                String
-  bio                String
-  followersCount     Int
+  fid            Int            @id
+  username       String
+  displayName    String
+  pfp            String
+  bio            String
+  followersCount Int
+  cred           String[]
+  PackagedCast   PackagedCast[]
+
   createdAt          DateTime           @default(now())
   connectedAddresses ConnectedAddress[]
 }
@@ -181,26 +180,24 @@ model LensUserAddress {
 }
 
 model PackagedCast {
-  id               String             @id
-  cred             Cred
-  venue            Venue
-  address          String
-  displayName      String
-  username         String
-  text             String
-  timestamp        DateTime
-  mentions         BigInt[]
-  mentionPositions Int[]
-  embeds           String[]
-  likesCount       Int                @default(0)
-  recastsCount     Int                @default(0)
-  repliesCount     Int                @default(0)
-  hash             String
-  parentHash       String?
-  deletedAt        DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  PackagedCastSent PackagedCastSent[]
+  id                String             @id
+  text              String
+  timestamp         DateTime
+  mentions          BigInt[]
+  mentionsPositions Int[]
+  embeds            String[]
+  likesCount        Int                @default(0)
+  recastsCount      Int                @default(0)
+  repliesCount      Int                @default(0)
+  hash              String
+  parentHash        String?
+  deletedAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  PackagedCastSent  PackagedCastSent[]
+
+  user User @relation(fields: [fid], references: [fid])
+  fid  Int
 }
 
 // Packaged cred sent to a chat. This is used to ensure idempotence.
