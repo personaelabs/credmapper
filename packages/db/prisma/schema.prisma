@@ -16,27 +16,6 @@ enum Chain {
   Optimism
 }
 
-enum Venue {
-  Farcaster
-  Lens
-}
-
-model PurchasedEvent {
-  transactionHash String @id
-  blockNumber     BigInt
-  quantity        BigInt
-  value           BigInt
-  tokenId         BigInt
-  minter          String
-  contractAddress String
-  chain           Chain
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([minter])
-}
-
 model TransferEvent {
   transactionHash String @id
   blockNumber     BigInt
@@ -75,149 +54,29 @@ model ConnectedAddress {
   fid  Int
 }
 
-model SyncInfo {
-  eventName    String
-  synchedBlock BigInt
-  chain        Chain
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@id([eventName, chain])
-}
-
-model ERC721Metadata {
-  contractAddress String @id
-  name            String
-  chain           Chain
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ERC721Token {
-  contractAddress String
-  tokenId         String
-  name            String
-  description     String
-  image           String
-  animation       String?
-  chain           Chain
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@unique([contractAddress, tokenId])
-}
-
-model ERC1155Token {
-  contractAddress String
-  tokenId         BigInt
-  name            String
-  description     String
-  image           String
-  animation       String?
-  chain           Chain
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@unique([contractAddress, tokenId])
-}
-
-model MirrorPost {
-  digest                String   @id
-  arweaveTx             String
-  owner                 String
-  title                 String
-  body                  String
-  timestamp             DateTime
-  description           String
-  imageURI              String
-  proxyAddress          String
-  symbol                String
-  chain                 Chain
-  originalContentDigest String
-  blockNumber           BigInt   @default(0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  @@index([owner])
-}
-
-model TokenBalance {
-  address         String
-  contractAddress String
-  balance         BigInt
-  chain           Chain
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@id([address, contractAddress])
-}
-
 model TxCount {
   address   String   @id
-  venue     Venue
   txCount   Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model TGChat {
-  chatId              String             @id
-  venues              Venue[]            @default([Farcaster, Lens])
-  channels            String[]           @default([])
-  dailyUpdatesEnabled Boolean            @default(true)
-  canceled            Boolean            @default(false)
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  PackagedCastSent    PackagedCastSent[]
-}
-
-model LensUserAddress {
-  profileId String   @id
-  address   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model PackagedCast {
-  id                String             @id
+  id                String    @id
   text              String
   timestamp         DateTime
   mentions          BigInt[]
   mentionsPositions Int[]
   embeds            String[]
-  likesCount        Int                @default(0)
-  recastsCount      Int                @default(0)
-  repliesCount      Int                @default(0)
+  likesCount        Int       @default(0)
+  recastsCount      Int       @default(0)
+  repliesCount      Int       @default(0)
   hash              String
-  parentHash        String?
+  parentUrl         String?
   deletedAt         DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  PackagedCastSent  PackagedCastSent[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   user User @relation(fields: [fid], references: [fid])
   fid  Int
-}
-
-// Packaged cred sent to a chat. This is used to ensure idempotence.
-model PackagedCastSent {
-  packagedCastId String
-  chatId         String
-  packagedCast   PackagedCast @relation(fields: [packagedCastId], references: [id])
-  chat           TGChat       @relation(fields: [chatId], references: [chatId])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([packagedCastId, chatId])
-}
-
-model MessageLog {
-  id      Int    @id @default(autoincrement())
-  chatId  String
-  message String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

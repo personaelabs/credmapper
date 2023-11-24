@@ -189,14 +189,7 @@ export const syncFcUsers = async () => {
   console.timeEnd('Insert connected addresses');
 };
 
-export const getCasts = async (
-  options: GetCastsOptions,
-): Promise<
-  ({
-    displayName: string;
-    username: string;
-  } & CastsQueryResult)[]
-> => {
+export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResult[]> => {
   const fids = Prisma.join(options.fids);
 
   console.time('Get casts');
@@ -222,37 +215,5 @@ export const getCasts = async (
    `;
   console.timeEnd('Get casts');
 
-  console.time('Get usernames');
-  const usernames = await fcReplicaClient.$queryRaw<UsernameQueryResult[]>`
-      SELECT
-      fid,
-      "value"
-      FROM
-        user_data
-      WHERE
-      "type" = 6 AND fid in (${fids})
-    `;
-  console.timeEnd('Get usernames');
-
-  console.time('Get display names');
-  const displayNames = await fcReplicaClient.$queryRaw<UsernameQueryResult[]>`
-      SELECT
-      fid,
-      "value"
-      FROM
-        user_data
-      WHERE
-      "type" = 2 AND fid in (${fids})
-    `;
-  console.timeEnd('Get display names');
-
-  console.time('Map casts');
-  const casts = castsQueryResult.map((cast) => ({
-    ...cast,
-    username: usernames.find((username) => username.fid === cast.fid)?.value || '',
-    displayName: displayNames.find((displayName) => displayName.fid === cast.fid)?.value || '',
-  }));
-  console.timeEnd('Map casts');
-
-  return casts;
+  return castsQueryResult;
 };

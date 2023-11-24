@@ -1,9 +1,6 @@
 import prisma from './prisma';
 import { IndexedCast, SyncPackagedCredOptions } from './types';
 import { getCasts } from './providers/farcaster';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
-import { Venue } from '@prisma/client';
 import { Hex } from 'viem';
 import { batchRun } from './utils';
 
@@ -45,16 +42,16 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
               )?.address as Hex;
 
               return {
+                fid: cast.fid,
                 text: cast.text,
                 address,
                 timestamp: cast.timestamp,
                 hash: `0x${cast.hash.toString('hex')}`,
-                username: cast.username,
-                displayName: cast.displayName,
                 embeds: cast.embeds.map((embed) => embed.url),
                 mentions: cast.mentions,
                 mentionsPositions: cast.mentions_positions,
-              };
+                parentUrl: cast.parent_url,
+              } as IndexedCast;
             } catch (e) {
               console.log(e);
               return null;
@@ -66,22 +63,24 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
       for (const cast of parsedCasts) {
         const data = {
           id: cast.hash,
-          address: cast.address,
-          cred: 'over_100txs',
-          venue: Venue.Farcaster,
           text: cast.text,
           timestamp: cast.timestamp,
-          username: cast.username,
-          displayName: cast.displayName,
           embeds: cast.embeds,
           mentions: cast.mentions,
           mentionsPositions: cast.mentionsPositions,
-          parentHash: cast.parentHash,
+          parentUrl: cast.parentUrl,
           hash: cast.hash,
         };
 
         await prisma.packagedCast.upsert({
-          create: data,
+          create: {
+            ...data,
+            user: {
+              connect: {
+                fid: Number(cast.fid),
+              },
+            },
+          },
           update: data,
           where: {
             id: cast.hash,

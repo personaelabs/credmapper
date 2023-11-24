@@ -205,13 +205,14 @@ export interface ParsedLensPost {
 }
 
 export interface IndexedCast {
+  fid: bigint;
   text: string;
   timestamp: Date;
   hash: Hex;
   username: string;
   displayName: string;
   embeds: string[];
-  parentHash: string | null;
+  parentUrl: string | null;
   mentions: bigint[];
   mentionsPositions: number[];
   likesCount: number;

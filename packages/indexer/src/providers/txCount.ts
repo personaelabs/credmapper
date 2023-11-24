@@ -2,7 +2,6 @@ import { Alchemy, Network } from 'alchemy-sdk';
 import { Hex } from 'viem';
 import { batchRun } from '../utils';
 import prisma from '../prisma';
-import { Venue } from '@prisma/client';
 
 // Optional config object, but defaults to the API key 'demo' and Network 'eth-mainnet'.
 const settings = {
@@ -18,7 +17,7 @@ export const getTransactionCount = async (address: Hex): Promise<number> => {
   return txCount;
 };
 
-export const syncTxCount = async (addresses: Hex[], venue: Venue) => {
+export const syncTxCount = async (addresses: Hex[]) => {
   await batchRun(
     async (batch) => {
       try {
@@ -26,7 +25,6 @@ export const syncTxCount = async (addresses: Hex[], venue: Venue) => {
           batch.map(async (address) => ({
             address,
             txCount: await getTransactionCount(address),
-            venue,
           })),
         );
 
