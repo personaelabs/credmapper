@@ -3,10 +3,8 @@ import {
   UserProfile,
   UserDataQueryResult,
   ConnectedAddressesQueryResults,
-  DeletedAddressesQueryResults,
   GetCastsOptions,
   CastsQueryResult,
-  UsernameQueryResult,
 } from '../types';
 import { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../prisma';
@@ -81,87 +79,10 @@ const getUsers = async (): Promise<UserProfile[]> => {
   return Object.values(profiles) as UserProfile[];
 };
 
-// Get all connected addresses from the Farcaster replica database
-export const getConnectedAddresses = async (): Promise<ConnectedAddressesQueryResults[]> => {
-  const synchedFIDs = (
-    await prisma.user.findMany({
-      select: {
-        fid: true,
-      },
-    })
-  ).map((r) => r.fid);
-
-  const result = await fcReplicaClient.$queryRaw<ConnectedAddressesQueryResults[]>`
-    SELECT
-      fid,
-      ARRAY_AGG(claim) as addresses
-    FROM
-      verifications
-    WHERE fid in (${Prisma.join(synchedFIDs)})
-    and deleted_at IS NULL
-    GROUP BY
-      fid
-  `;
-
-  return result;
-};
-
-const getDeletedAddresses = async (): Promise<DeletedAddressesQueryResults[]> => {
-  const result = await fcReplicaClient.$queryRaw<DeletedAddressesQueryResults[]>`
-    SELECT
-    fid,
-    ARRAY_AGG(claim) as addresses
-  FROM
-    verifications
-  WHERE
-    deleted_at IS NOT NULL
-  GROUP BY
-    fid
-  `;
-
-  return result;
-};
-
-export const syncFcUsers = async () => {
-  // Get deleted connections
-  const deletedConnections = await getDeletedAddresses();
-
-  // Delete deleted connections
-  for (const connection of deletedConnections) {
-    await prisma.connectedAddress.deleteMany({
-      where: {
-        fid: Number(connection.fid),
-        address: {
-          in: connection.addresses.map((r) => r.address),
-        },
-      },
-    });
-  }
-
+export const indexFcUsers = async () => {
   console.time('Get user profiles');
   const userProfiles = await getUsers();
   console.timeEnd('Get user profiles');
-
-  // Get deleted users
-  const deletedUsers = await prisma.user.findMany({
-    where: {
-      NOT: {
-        fid: {
-          in: userProfiles.map((r) => Number(r.fid)),
-        },
-      },
-    },
-  });
-
-  // Delete deleted users
-  const profileDeletedFIDs = deletedUsers.map((r) => r.fid);
-  await prisma.user.deleteMany({
-    where: {
-      fid: {
-        in: profileDeletedFIDs,
-      },
-    },
-  });
 
   // Create users
   await prisma.user.createMany({
@@ -171,22 +92,6 @@ export const syncFcUsers = async () => {
     })),
     skipDuplicates: true,
   });
-
-  // Get connected addresses
-  console.time('Get connected addresses');
-  const connectedAddresses = await getConnectedAddresses();
-  console.timeEnd('Get connected addresses');
-
-  const data = connectedAddresses
-    .map((r) => r.addresses.map((address) => ({ fid: Number(r.fid), address: address.address })))
-    .flat();
-
-  console.time('Insert connected addresses');
-  await prisma.connectedAddress.createMany({
-    data,
-    skipDuplicates: true,
-  });
-  console.timeEnd('Insert connected addresses');
 };
 
 export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResult[]> => {
@@ -216,4 +121,16 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResu
   console.timeEnd('Get casts');
 
   return castsQueryResult;
+};
+
+export const getUserAddresses = async (): Promise<ConnectedAddressesQueryResults[]> => {
+  const connectedAddresses = await fcReplicaClient.$queryRaw<ConnectedAddressesQueryResults[]>`
+      SELECT
+          "verified_addresses",
+          "fid"
+      FROM
+        profile_with_addresses
+   `;
+
+  return connectedAddresses;
 };

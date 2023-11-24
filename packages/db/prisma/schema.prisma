@@ -38,20 +38,10 @@ model User {
   pfp            String
   bio            String
   followersCount Int
-  cred           String[]
   PackagedCast   PackagedCast[]
 
-  createdAt          DateTime           @default(now())
-  connectedAddresses ConnectedAddress[]
-}
-
-model ConnectedAddress {
-  address   String   @id
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  User User @relation(fields: [fid], references: [fid])
-  fid  Int
 }
 
 model TxCount {

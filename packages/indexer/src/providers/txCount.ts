@@ -17,7 +17,7 @@ export const getTransactionCount = async (address: Hex): Promise<number> => {
   return txCount;
 };
 
-export const syncTxCount = async (addresses: Hex[]) => {
+export const indexTxCount = async (addresses: Hex[]) => {
   await batchRun(
     async (batch) => {
       try {

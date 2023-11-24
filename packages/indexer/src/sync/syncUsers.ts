@@ -1,19 +1,19 @@
-import { syncFcUsers } from '../providers/farcaster';
+import { getUserAddresses, indexFcUsers } from '../providers/farcaster';
 import prisma from '../prisma';
-import { syncTxCount } from '../providers/txCount';
+import { indexTxCount } from '../providers/txCount';
 import { Hex } from 'viem';
-import { getLensUsers } from '../providers/lens';
-import { syncPackagesCred } from '../cred';
 
 const syncUsers = async () => {
   console.time('Sync time');
 
-  await syncFcUsers();
+  await indexFcUsers();
 
-  const connectedAddresses = await prisma.connectedAddress.findMany();
+  const connectedAddresses = (await getUserAddresses())
+    .map((r) => r.verified_addresses as Hex[])
+    .flat();
 
   // Sync the transaction count of Connected addresses.
-  await syncTxCount(connectedAddresses.map((address) => address.address as Hex));
+  await indexTxCount(connectedAddresses);
 
   console.timeEnd('Sync time');
 };
