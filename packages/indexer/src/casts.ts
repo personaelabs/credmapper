@@ -1,33 +1,33 @@
 import prisma from './prisma';
-import { IndexedCast, SyncPackagedCredOptions } from './types';
-import { getCasts } from './providers/farcaster';
 import { Hex } from 'viem';
+import { getCasts } from './providers/farcaster';
 import { batchRun } from './utils';
+import { IndexedCast } from './types';
 
-// Fetch and save Lens posts filtered by the given options.
-const syncPackagesLensPosts = async (options: SyncPackagedCredOptions) => {
-  // TBD
-};
+// Index all casts from users with at least one cred
+export const indexCasts = async () => {
+  const fromDate = new Date('2023-11-15T00:00:00.000Z');
 
-// Fetch and save Farcaster casts filtered by the given options.
-const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
-  // Get Farcaster connected addresses that have many transactions
-  const connectedAccountsWithManyTxs = (
-    await prisma.connectedAddress.findMany({
-      where: {
-        address: {
-          in: options.credibleAddresses,
+  const userCreds = await prisma.userCred.findMany({
+    distinct: ['fid'],
+    select: {
+      fid: true,
+      user: {
+        select: {
+          fid: true,
         },
       },
-    })
-  ).map((account) => account);
+    },
+  });
 
-  const fids = [...new Set(connectedAccountsWithManyTxs.map((address) => BigInt(address.fid)))];
+  const fids = userCreds.map((userCred) => BigInt(userCred.fid));
 
   const casts = await getCasts({
     fids,
-    fromDate: options.fromDate,
+    fromDate,
   });
+
+  console.log(casts[0]);
 
   console.log(`Found ${casts.length} casts`);
 
@@ -37,20 +37,17 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
         await Promise.all(
           casts.map(async (cast) => {
             try {
-              const address = connectedAccountsWithManyTxs.find(
-                (account) => BigInt(account.fid) === cast.fid,
-              )?.address as Hex;
-
               return {
                 fid: cast.fid,
                 text: cast.text,
-                address,
                 timestamp: cast.timestamp,
                 hash: `0x${cast.hash.toString('hex')}`,
                 embeds: cast.embeds.map((embed) => embed.url),
                 mentions: cast.mentions,
                 mentionsPositions: cast.mentions_positions,
                 parentUrl: cast.parent_url,
+                likesCount: cast.likes_count,
+                recastsCount: cast.recasts_count,
               } as IndexedCast;
             } catch (e) {
               console.log(e);
@@ -70,6 +67,8 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
           mentionsPositions: cast.mentionsPositions,
           parentUrl: cast.parentUrl,
           hash: cast.hash,
+          likesCount: cast.likesCount,
+          recastsCount: cast.recastsCount,
         };
 
         await prisma.packagedCast.upsert({
@@ -89,12 +88,7 @@ const syncPackagedCasts = async (options: SyncPackagedCredOptions) => {
       }
     },
     casts,
-    'Parse casts',
+    'Index casts',
     20,
   );
-};
-
-export const syncPackagesCred = async (options: SyncPackagedCredOptions) => {
-  await syncPackagesLensPosts(options);
-  await syncPackagedCasts(options);
 };

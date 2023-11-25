@@ -1,15 +1,20 @@
 import 'dotenv/config';
 
-const HOST_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://tg-bot-nu-seven.vercel.app'
-    : 'http://localhost:3000';
-
 const credMeta = [
   {
-    id: 'over_100txs',
+    id: 'eth-mainnet_over100Txs',
     name: '> 100txs',
-    image: `${HOST_URL}/eth-diamond-black.svg`,
+    image: `https://warpcast.com/~/channel-images/ethereum.png`,
+  },
+  {
+    id: 'opt-mainnet_over100Txs',
+    name: '> 100txs',
+    image: 'https://warpcast.com/~/channel-images/op-stack.png',
+  },
+  {
+    id: 'base-mainnet_over100Txs',
+    name: '> 100txs',
+    image: `https://warpcast.com/~/channel-images/base.png`,
   },
 ];
 

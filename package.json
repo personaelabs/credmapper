@@ -7,7 +7,7 @@
   "scripts": {
     "db:start": "pnpm -F db run start",
     "indexer:syncUsers": "pnpm -F indexer run syncUsers",
-    "indexer:syncCred": "pnpm -F indexer run syncPackagedCred",
+    "indexer:syncCred": "pnpm -F indexer run indexCasts",
     "bot:dev": "pnpm -F tgbot run bot:dev",
     "cron:dev": "pnpm -F tgbot run dev",
     "check": "pnpm -r check",

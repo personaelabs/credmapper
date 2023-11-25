@@ -12,51 +12,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const query = req.query as unknown as GetFeedQueryParams;
 
   const channelId = query.channelId;
-  const parentHash = channels.find((c) => c.channel_id === channelId)?.parent_url;
+  const parentUrl = channels.find((c) => c.channel_id === channelId)?.parent_url;
   const cred = query.cred;
-  console.log({ channelId, parentHash });
   const offset = parseInt((query.offset || '0') as string);
-  console.log({ offset });
+  console.log(channelId, cred);
 
   const casts = await prisma.packagedCast.findMany({
     select: {
       text: true,
       timestamp: true,
-      parentHash: true,
+      parentUrl: true,
       embeds: true,
       mentions: true,
       mentionsPositions: true,
+      likesCount: true,
+      recastsCount: true,
+      repliesCount: true,
       user: {
         select: {
           displayName: true,
-          cred: true,
           username: true,
+          pfp: true,
+          UserCred: {
+            select: {
+              cred: true,
+            },
+          },
         },
       },
     },
     where: {
       user: cred
         ? {
-            cred: {
-              has: cred,
+            UserCred: {
+              some: {
+                cred,
+              },
             },
           }
         : {},
-      parentHash,
+      parentUrl,
     },
     skip: offset as number,
     take: 11,
     orderBy: {
-      timestamp: 'desc',
+      score: 'desc',
     },
   });
 
   const feed = casts.slice(0, 10).map((cast) => ({
-    username: cast.user.username,
-    text: cast.text,
-    timestamp: cast.timestamp,
-    cred: 'over_100txs',
-    channel: channels.find((c) => c.parent_url === cast.parentHash)?.name || 'Home',
+    ...cast,
+    mentions: cast.mentions.map((mention) => mention.toString()),
+    likesCount: Number(cast.likesCount),
+    recastsCount: Number(cast.recastsCount),
+    repliesCount: Number(cast.repliesCount),
+    channel: channels.find((c) => c.parent_url === cast.parentUrl),
   }));
 
   const hasMore = casts.length > 10;

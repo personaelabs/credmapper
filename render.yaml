@@ -6,13 +6,13 @@ services:
     region: oregon
     rootDir: ./
     branch: main
-    schedule: "0 * * * *"
+    schedule: '0 * * * *'
     buildCommand: pnpm -F db migrate:prod
-    startCommand: pnpm -F indexer syncPackagedCred
+    startCommand: pnpm -F indexer indexCasts
     buildFilter:
       paths:
-      - packages/indexer/**
-      - packages/db/**
+        - packages/indexer/**
+        - packages/db/**
     envVars:
       - key: DATABASE_URL
         fromDatabase:

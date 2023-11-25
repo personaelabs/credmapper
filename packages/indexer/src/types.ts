@@ -66,6 +66,8 @@ export interface CastsQueryResult {
   mentions: bigint[];
   mentions_positions: number[];
   embeds: CastEmbed[];
+  likes_count: bigint;
+  recasts_count: bigint;
 }
 
 export interface UsernameQueryResult {
@@ -94,10 +96,9 @@ export interface IndexedCast {
   parentUrl: string | null;
   mentions: bigint[];
   mentionsPositions: number[];
-  likesCount: number;
-  recastsCount: number;
-  repliesCount: number;
-  address: Hex;
+  likesCount: bigint;
+  recastsCount: bigint;
+  repliesCount: bigint;
 }
 
 export interface GetLensPostQueryResult {

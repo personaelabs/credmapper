@@ -14,6 +14,7 @@ enum Chain {
   Zora
   Ethereum
   Optimism
+  Base
 }
 
 model TransferEvent {
@@ -39,16 +40,20 @@ model User {
   bio            String
   followersCount Int
   PackagedCast   PackagedCast[]
+  UserCred       UserCred[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model TxCount {
-  address   String   @id
+  address   String
   txCount   Int
+  network   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@id([address, network])
 }
 
 model PackagedCast {
@@ -58,15 +63,24 @@ model PackagedCast {
   mentions          BigInt[]
   mentionsPositions Int[]
   embeds            String[]
-  likesCount        Int       @default(0)
-  recastsCount      Int       @default(0)
-  repliesCount      Int       @default(0)
+  likesCount        BigInt    @default(0)
+  recastsCount      BigInt    @default(0)
+  repliesCount      BigInt    @default(0)
   hash              String
   parentUrl         String?
+  score             Float     @default(0)
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   user User @relation(fields: [fid], references: [fid])
   fid  Int
+}
+
+model UserCred {
+  cred String
+  fid  Int
+  user User   @relation(fields: [fid], references: [fid])
+
+  @@id([fid, cred])
 }
