@@ -15,7 +15,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const parentUrl = channels.find((c) => c.channel_id === channelId)?.parent_url;
   const cred = query.cred;
   const offset = parseInt((query.offset || '0') as string);
-  console.log(channelId, cred);
 
   const casts = await prisma.packagedCast.findMany({
     select: {
@@ -70,7 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }));
 
   const hasNextPage = casts.length > 10;
-  console.log(hasNextPage);
 
   res.status(200).json({ feed, hasNextPage });
 }
