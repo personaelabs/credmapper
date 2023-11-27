@@ -71,20 +71,24 @@ export const indexCasts = async () => {
           recastsCount: cast.recastsCount,
         };
 
-        await prisma.packagedCast.upsert({
-          create: {
-            ...data,
-            user: {
-              connect: {
-                fid: Number(cast.fid),
+        try {
+          await prisma.packagedCast.upsert({
+            create: {
+              ...data,
+              user: {
+                connect: {
+                  fid: Number(cast.fid),
+                },
               },
             },
-          },
-          update: data,
-          where: {
-            id: cast.hash,
-          },
-        });
+            update: data,
+            where: {
+              id: cast.hash,
+            },
+          });
+        } catch (err) {
+          console.log(err);
+        }
       }
     },
     casts,

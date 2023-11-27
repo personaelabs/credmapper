@@ -10,13 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Chain {
-  Zora
-  Ethereum
-  Optimism
-  Base
-}
-
 model TransferEvent {
   transactionHash String @id
   blockNumber     BigInt
@@ -24,12 +17,36 @@ model TransferEvent {
   to              String
   tokenId         String
   contractAddress String
-  chain           Chain
+  chain           String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([to])
+}
+
+model BeaconDepositEvent {
+  transactionHash String @id
+  value           String
+  blockNumber     BigInt
+  index           String
+  address         String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model AddressInfo {
+  address             String
+  network             String
+  firstTx             String
+  firstTxTimestamp    DateTime
+  txCount             Int
+  contractDeployments String[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
+
+  @@id([address, network])
 }
 
 model User {

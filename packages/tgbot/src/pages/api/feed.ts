@@ -69,7 +69,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     channel: channels.find((c) => c.parent_url === cast.parentUrl),
   }));
 
-  const hasMore = casts.length > 10;
+  const hasNextPage = casts.length > 10;
+  console.log(hasNextPage);
 
-  res.status(200).json({ feed, hasMore });
+  res.status(200).json({ feed, hasNextPage });
 }

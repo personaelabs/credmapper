@@ -1,6 +1,5 @@
-import { Chain } from '@prisma/client';
 import { AbiEvent } from 'abitype';
-import { Hex } from 'viem';
+import { Hex, Chain } from 'viem';
 
 export interface UserProfile {
   [key: string]: any;
@@ -123,4 +122,42 @@ export interface GetLensPostsOptions {
   profileIds: string[];
   startDate: Date;
   endDate: Date;
+}
+
+export interface ContractEventInfo {
+  address: Hex;
+  chain: Chain;
+  name: string;
+  deployedBlock: number;
+  event: AbiEvent;
+}
+
+export interface CurrentOwnersQueryResult {
+  tokenId: bigint;
+  owner: Hex;
+}
+
+export interface TxListResponse {
+  status: string;
+  message: string;
+  result: {
+    blockNumber: string;
+    timeStamp: string;
+    hash: string;
+    nonce: string;
+    blockHash: string;
+    transactionIndex: string;
+    from: string;
+    to: string;
+    value: string;
+    gas: string;
+    gasPrice: string;
+    isError: string;
+    txreceipt_status: string;
+    input: string;
+    contractAddress: string;
+    cumulativeGasUsed: string;
+    gasUsed: string;
+    confirmations: string;
+  }[];
 }

@@ -20,7 +20,6 @@ export const indexTxCount = async (addresses: Hex[]) => {
     const alchemyClient = alchemy(network);
     await batchRun(
       async (batch) => {
-        console.log(network);
         try {
           const txCounts = await Promise.all(
             batch.map(async (address) => ({

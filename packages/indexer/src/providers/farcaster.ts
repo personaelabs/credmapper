@@ -115,7 +115,6 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResu
           casts
         WHERE
           deleted_at IS NULL
-          AND fid in(${fids})
           AND "parent_hash" IS NULL
           AND "timestamp" > ${options.fromDate}
         ORDER BY
