@@ -1,5 +1,5 @@
 import { Hex } from 'viem';
-import { getUserAddresses, indexUsers } from './providers/farcaster';
+import { getAllAddresses, indexUsers } from './providers/farcaster';
 import { indexTxCount } from './providers/txCount';
 import assignOver100Txs from './cred/assignOver100Txs';
 import { indexCasts } from './casts';
@@ -12,7 +12,7 @@ import assignAccountInfo from './cred/assignAccountInfo';
 
 const sync = async () => {
   await indexUsers();
-  const connectedAddresses = (await getUserAddresses())
+  const connectedAddresses = (await getAllAddresses())
     .map((r) => r.verified_addresses as Hex[])
     .flat();
 

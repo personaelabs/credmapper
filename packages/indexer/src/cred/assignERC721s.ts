@@ -2,11 +2,11 @@ import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
 import CONTRACT_EVENTS from '../providers/erc721/contractEvents';
 import { CurrentOwnersQueryResult } from '../types';
-import { getUserAddresses } from '../providers/farcaster';
+import { getAllAddresses } from '../providers/farcaster';
 import { Hex } from 'viem';
 
 const assignERC721s = async () => {
-  const userAddresses = await getUserAddresses();
+  const userAddresses = await getAllAddresses();
   const connectedAddresses = userAddresses.map((r) => r.verified_addresses as Hex[]).flat();
 
   for (const contractEvent of CONTRACT_EVENTS) {

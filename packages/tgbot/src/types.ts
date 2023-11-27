@@ -4,6 +4,10 @@ export interface GetFeedQueryParams {
   offset?: string;
 }
 
+export interface GetAccountQueryParams {
+  fid: string;
+}
+
 export interface IndexedCast {
   text: string;
   timestamp: Date;

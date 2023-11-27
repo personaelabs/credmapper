@@ -152,7 +152,7 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResu
   return castsQueryResult;
 };
 
-export const getUserAddresses = async (): Promise<ConnectedAddressesQueryResults[]> => {
+export const getAllAddresses = async (): Promise<ConnectedAddressesQueryResults[]> => {
   console.time('Get connected addresses');
   const connectedAddresses = await fcReplicaClient.$queryRaw<ConnectedAddressesQueryResults[]>`
       SELECT
