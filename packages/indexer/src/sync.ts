@@ -11,7 +11,7 @@ import { indexAccounts } from './providers/account';
 import assignAccountInfo from './cred/assignAccountInfo';
 
 const sync = async () => {
-  await indexUsers();
+  // await indexUsers();
   const connectedAddresses = (await getAllAddresses())
     .map((r) => r.verified_addresses as Hex[])
     .flat();
