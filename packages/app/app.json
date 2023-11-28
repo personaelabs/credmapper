@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "cred",
+    "slug": "hello-expo",
+    "scheme": "cred",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/personae.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/lines.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#181C1F"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dantehrani.helloexpo"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/personae-bg.jpeg",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/personae.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b97df4a3-90b3-4cef-b6eb-234d8cfa5638"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
