@@ -161,3 +161,9 @@ export interface TxListResponse {
     confirmations: string;
   }[];
 }
+
+export interface ContractWithDeployedBlock {
+  name?: string;
+  address: Hex;
+  deployedBlock: bigint;
+}

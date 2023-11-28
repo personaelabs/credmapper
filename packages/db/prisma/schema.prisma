@@ -25,6 +25,23 @@ model TransferEvent {
   @@index([to])
 }
 
+model ERC20TransferEvent {
+  transactionHash  String @id
+  transactionIndex BigInt
+  logIndex         BigInt
+  blockNumber      BigInt
+  from             String
+  to               String
+  value            String
+  contractAddress  String
+  chain            String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([to, from])
+}
+
 model BeaconDepositEvent {
   transactionHash String @id
   value           String

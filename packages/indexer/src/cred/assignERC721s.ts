@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
-import CONTRACT_EVENTS from '../providers/erc721/contractEvents';
+import CONTRACTS from '../providers/erc721/contracts';
 import { CurrentOwnersQueryResult } from '../types';
 import { getAllAddresses } from '../providers/farcaster';
 import { Hex } from 'viem';
@@ -9,8 +9,8 @@ const assignERC721s = async () => {
   const userAddresses = await getAllAddresses();
   const connectedAddresses = userAddresses.map((r) => r.verified_addresses as Hex[]).flat();
 
-  for (const contractEvent of CONTRACT_EVENTS) {
-    const cred = `${contractEvent.name}_owner`;
+  for (const contract of CONTRACTS) {
+    const cred = `${contract.name}_owner`;
     const result = await prisma.$queryRaw<CurrentOwnersQueryResult[]>`
       WITH partitioned AS (
         SELECT
@@ -19,7 +19,7 @@ const assignERC721s = async () => {
         FROM
           "TransferEvent"
         WHERE
-        "contractAddress" = ${contractEvent.address}
+        "contractAddress" = ${contract.address}
         AND "to" IN (${Prisma.join(connectedAddresses)})
       )
       SELECT

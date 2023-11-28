@@ -8,7 +8,8 @@
     "db:start": "pnpm -F db run start",
     "sync": "pnpm -F indexer run sync",
     "check": "pnpm -r check",
-    "prepare": "pnpm -F db build"
+    "prepare": "pnpm -F db build",
+    "app:dev": "pnpm -F app run dev"
   },
   "keywords": [],
   "author": "",

@@ -36,7 +36,3 @@ export const batchRun = async <T>(
     await fn(batch);
   }
 };
-
-export const bigIntMin = (...args: bigint[]) => {
-  return args.reduce((min, b) => (b < min ? b : min));
-};

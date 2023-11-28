@@ -1,15 +1,17 @@
-import { BeaconDepositEvent, TransferEvent } from '@prisma/client';
+import { BeaconDepositEvent } from '@prisma/client';
 import prisma from '../../prisma';
 import { GetFilterLogsReturnType, Hex, Chain } from 'viem';
 import { processLogs } from '../../lib/processLogs';
 import * as chains from 'viem/chains';
-import { AbiEvent } from 'abitype';
 import { DEPOSIT_EVENT } from './abi/abi';
-import alchemy from '../alchemy';
 import { getClient } from '../ethRpc';
+import { ContractWithDeployedBlock } from '../../types';
 
 const FIRST_DEPOSIT_AT = BigInt(11184900); // A little before the first deposit event
-const BEACON_ADDRESS = '0x00000000219ab540356cbb839cbe05303d7705fa';
+const BEACON_CONTRACT: ContractWithDeployedBlock = {
+  address: '0x00000000219ab540356cbb839cbe05303d7705fa',
+  deployedBlock: FIRST_DEPOSIT_AT,
+};
 
 // Sync `Transfer` events from ERC721 contracts
 export const indexBeaconDepositors = async () => {
@@ -59,7 +61,7 @@ export const indexBeaconDepositors = async () => {
     DEPOSIT_EVENT,
     latestEvent?.blockNumber || FIRST_DEPOSIT_AT,
     processor,
-    [BEACON_ADDRESS],
+    BEACON_CONTRACT,
     BigInt(100),
   );
 };
