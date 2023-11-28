@@ -1,3 +1,40 @@
+import { Hex } from 'viem';
+
+export interface CastEmbed {
+  url: string;
+}
+
+export interface CastsQueryResult {
+  timestamp: Date;
+  text: string;
+  hash: Buffer;
+  parent_fid: bigint | null;
+  fid: bigint;
+  parent_url: string | null;
+  mentions: bigint[];
+  mentions_positions: number[];
+  embeds: CastEmbed[];
+  likes_count: bigint;
+  recasts_count: bigint;
+}
+
+export interface IndexedCast {
+  id: Hex;
+  fid: bigint;
+  text: string;
+  hash: Hex;
+  timestamp: Date;
+  username: string;
+  displayName: string;
+  embeds: string[];
+  parentUrl: string | null;
+  mentions: bigint[];
+  mentionsPositions: number[];
+  likesCount: bigint;
+  recastsCount: bigint;
+  repliesCount: bigint;
+}
+
 export interface GetFeedQueryParams {
   channelId?: string;
   cred?: string;
@@ -6,16 +43,6 @@ export interface GetFeedQueryParams {
 
 export interface GetAccountQueryParams {
   custodyAddress: string;
-}
-
-export interface IndexedCast {
-  text: string;
-  timestamp: Date;
-  address: string;
-  hash: string;
-  username: string;
-  ogpImage: string;
-  images: string[];
 }
 
 export interface CreateSignerResponse {

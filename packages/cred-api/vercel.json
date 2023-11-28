@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/indexFeed.ts": {
+      "maxDuration": 300
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/indexFeed",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
