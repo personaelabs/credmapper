@@ -5,9 +5,11 @@ import {
   ConnectedAddressesQueryResults,
   GetCastsOptions,
   CastsQueryResult,
+  UsersQueryResult,
 } from '../types';
 import { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../prisma';
+import { batchRun } from '../utils';
 
 // A client that points to the Farcaster replica database
 export const fcReplicaClient = new PrismaClient({
@@ -39,44 +41,61 @@ const userDataTypes = [
 
 // Get all users from the Farcaster replica database
 const getUsers = async (): Promise<UserProfile[]> => {
-  let profiles: {
-    [key: number]: UserProfile;
-  } = {};
-
-  for (const { key, type } of userDataTypes) {
-    const result = await fcReplicaClient.$queryRaw<UserDataQueryResult[]>`
+  const users = await fcReplicaClient.$queryRaw<UsersQueryResult[]>`
+    WITH pfps AS (
       SELECT
         fid,
-        value
+        value AS pfp
       FROM
         user_data
       WHERE
-        "type" = ${key}
-      ORDER BY
-        fid
-        `;
+        "type" = 1
+    ),
+    display_names AS (
+      SELECT
+        fid,
+        value AS display_name
+      FROM
+        user_data
+      WHERE
+        "type" = 2
+    ),
+    bios AS (
+      SELECT
+        fid,
+        value AS bio
+      FROM
+        user_data
+      WHERE
+        "type" = 3
+    ),
+    usernames AS (
+      SELECT
+        fid,
+        value AS username
+      FROM
+        user_data
+      WHERE
+        "type" = 6
+    )
+    SELECT
+      fids.fid, pfps.pfp, display_names.display_name, bios.bio, usernames.username
+    FROM
+      fids
+      LEFT JOIN pfps ON pfps.fid = fids.fid
+      LEFT JOIN display_names ON display_names.fid = fids.fid
+      LEFT JOIN bios ON bios.fid = fids.fid
+      LEFT JOIN usernames ON usernames.fid = fids.fid
+  `;
 
-    for (const row of result) {
-      const fid = Number(row.fid);
-      if (profiles[fid]) {
-        profiles[fid][type] = row.value;
-      } else {
-        profiles[fid] = {
-          fid: BigInt(fid),
-          pfp: '',
-          displayName: '',
-          bio: '',
-          username: '',
-          followersCount: 0,
-
-          // Set the actual value
-          [type]: row.value,
-        };
-      }
-    }
-  }
-
-  return Object.values(profiles) as UserProfile[];
+  return users.map((r) => ({
+    fid: r.fid,
+    displayName: r.display_name,
+    pfp: r.pfp,
+    bio: r.bio,
+    username: r.username,
+    followersCount: 0,
+  }));
 };
 
 export const indexUsers = async () => {
@@ -85,18 +104,27 @@ export const indexUsers = async () => {
   console.timeEnd('Get user profiles');
 
   // Create users
-  await prisma.user.createMany({
-    data: userProfiles.map((r) => ({
-      ...r,
-      fid: Number(r.fid),
-    })),
-    skipDuplicates: true,
-  });
+  await batchRun(
+    async (batch) => {
+      await Promise.all(
+        batch.map((userProfile) => {
+          return prisma.user.upsert({
+            where: {
+              fid: userProfile.fid,
+            },
+            update: userProfile,
+            create: userProfile,
+          });
+        }),
+      );
+    },
+    userProfiles,
+    'User',
+    50,
+  );
 };
 
 export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResult[]> => {
-  const fids = Prisma.join(options.fids);
-
   console.time('Get casts');
   const castsQueryResult = await fcReplicaClient.$queryRaw<CastsQueryResult[]>`
       WITH filtered_casts AS (

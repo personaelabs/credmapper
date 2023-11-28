@@ -67,11 +67,11 @@ model AddressInfo {
 }
 
 model User {
-  fid            Int            @id
-  username       String
-  displayName    String
-  pfp            String
-  bio            String
+  fid            BigInt         @id
+  username       String?
+  displayName    String?
+  pfp            String?
+  bio            String?
   followersCount Int
   PackagedCast   PackagedCast[]
   UserCred       UserCred[]
@@ -107,13 +107,13 @@ model PackagedCast {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  user User @relation(fields: [fid], references: [fid])
-  fid  Int
+  user User   @relation(fields: [fid], references: [fid])
+  fid  BigInt
 }
 
 model UserCred {
   cred String
-  fid  Int
+  fid  BigInt
   user User   @relation(fields: [fid], references: [fid])
 
   @@id([fid, cred])

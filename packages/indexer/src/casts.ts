@@ -4,32 +4,13 @@ import { getCasts } from './providers/farcaster';
 import { batchRun } from './utils';
 import { IndexedCast } from './types';
 
-// Index all casts from users with at least one cred
+// Index all casts from a specified date
 export const indexCasts = async () => {
   const fromDate = new Date('2023-11-15T00:00:00.000Z');
 
-  const userCreds = await prisma.userCred.findMany({
-    distinct: ['fid'],
-    select: {
-      fid: true,
-      user: {
-        select: {
-          fid: true,
-        },
-      },
-    },
-  });
-
-  const fids = userCreds.map((userCred) => BigInt(userCred.fid));
-
   const casts = await getCasts({
-    fids,
     fromDate,
   });
-
-  console.log(casts[0]);
-
-  console.log(`Found ${casts.length} casts`);
 
   await batchRun(
     async (casts) => {

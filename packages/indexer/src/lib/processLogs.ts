@@ -12,7 +12,7 @@ export const processLogs = async <T extends Transport, C extends Chain>(
   fromBlock: bigint,
   processor: (logs: GetFilterLogsReturnType) => Promise<void>,
   contract: ContractWithDeployedBlock,
-  batchSize: bigint = BigInt(1000),
+  batchSize: bigint = BigInt(2000),
 ) => {
   const client = getClient(chain);
 

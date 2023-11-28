@@ -9,6 +9,7 @@
     "sync": "pnpm -F indexer run sync",
     "check": "pnpm -r check",
     "prepare": "pnpm -F db build",
+    "api:dev": "pnpm -F cred-api run dev",
     "app:dev": "pnpm -F app run dev"
   },
   "keywords": [],

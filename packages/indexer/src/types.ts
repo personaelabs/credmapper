@@ -2,13 +2,20 @@ import { AbiEvent } from 'abitype';
 import { Hex, Chain } from 'viem';
 
 export interface UserProfile {
-  [key: string]: any;
   fid: bigint;
   pfp: string;
   displayName: string;
   bio: string;
   username: string;
   followersCount: number;
+}
+
+export interface UsersQueryResult {
+  fid: bigint;
+  pfp: string;
+  display_name: string;
+  bio: string;
+  username: string;
 }
 
 export interface UserDataQueryResult {
@@ -47,7 +54,6 @@ export interface LensUsersQueryResult {
 }
 
 export interface GetCastsOptions {
-  fids: bigint[];
   fromDate: Date;
 }
 

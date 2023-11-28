@@ -44,7 +44,7 @@ export const assignScores = async () => {
       score += WEIGHTS.timestamp / elapsedTime;
 
       c.user.UserCred.forEach((uc) => {
-        score += CRED_WEIGHTS[uc.cred];
+        score += CRED_WEIGHTS[uc.cred] || 0;
       });
 
       return {
@@ -55,13 +55,18 @@ export const assignScores = async () => {
     .sort((a, b) => b.score - a.score);
 
   for (const cast of scoredCasts) {
-    await prisma.packagedCast.update({
-      where: {
-        id: cast.id,
-      },
-      data: {
-        score: cast.score,
-      },
-    });
+    try {
+      await prisma.packagedCast.update({
+        where: {
+          id: cast.id,
+        },
+        data: {
+          score: cast.score,
+        },
+      });
+    } catch (err) {
+      console.log('error updating cast score', cast);
+      console.log(err);
+    }
   }
 };
