@@ -13,6 +13,7 @@ import assignERC20s from './cred/assignERC20';
 import { indexERC20 } from './providers/erc20/erc20';
 
 const sync = async () => {
+  /*
   await indexUsers();
 
   await indexTxCount();
@@ -21,22 +22,23 @@ const sync = async () => {
   const connectedAddresses = (await getAllAddresses())
     .map((r) => r.verified_addresses as Hex[])
     .flat();
+    */
 
   // await indexBeaconDepositors();
 
   // await indexERC721();
   // await assignERC721s();
 
-  await indexAccounts(connectedAddresses);
-  await assignAccountInfo();
+  //  await indexAccounts(connectedAddresses);
+  //  await assignAccountInfo();
 
-  // await indexERC20();
+  await indexERC20();
   // await assignERC20s();
 
-  await assignScores();
+  // await assignScores();
 
   // Index casts
-  await indexCasts();
+  // await indexCasts();
 };
 
 sync();
