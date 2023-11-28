@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/indexFeed.ts": {
+    "pages/api/indexFeed.ts": {
       "maxDuration": 300
     }
   },
