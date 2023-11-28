@@ -143,6 +143,12 @@ export interface CurrentOwnersQueryResult {
   owner: Hex;
 }
 
+export interface ERC20TokenHoldingsQueryResult {
+  total_value_in: number;
+  total_value_out: number;
+  address: string;
+}
+
 export interface TxListResponse {
   status: string;
   message: string;

@@ -15,7 +15,21 @@ export const getTransactionCount = async (
 
 export const networks = [Network.ETH_MAINNET, Network.OPT_MAINNET, Network.BASE_MAINNET];
 
-export const indexTxCount = async (addresses: Hex[]) => {
+export const indexTxCount = async () => {
+  // Get addresses that don't have > 100 txs as of the last sync
+  const addresses = (
+    await prisma.txCount.findMany({
+      where: {
+        txCount: {
+          lte: 100,
+        },
+      },
+      select: {
+        address: true,
+      },
+    })
+  ).map((r) => r.address as Hex);
+
   for (const network of networks) {
     const alchemyClient = alchemy(network);
     await batchRun(
