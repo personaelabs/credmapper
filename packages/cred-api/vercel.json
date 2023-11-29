@@ -1,6 +1,6 @@
 {
   "functions": {
-    "pages/api/indexFeed.ts": {
+    "src/pages/api/indexFeed.ts": {
       "memory": 3008,
       "maxDuration": 300
     }
