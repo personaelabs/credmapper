@@ -1,7 +1,7 @@
 services:
   - type: cron
     name: credmapper
-    plan: standard
+    plan: pro
     env: node
     region: oregon
     rootDir: ./
@@ -13,6 +13,10 @@ services:
       paths:
         - packages/indexer/**
         - packages/db/**
+      ignoredPaths:
+        - packages/cred-api/**
+        - packages/coindata/**
+        - packages/app/**
     envVars:
       - fromGroup: credmapper
       - key: NODE_VERSION
