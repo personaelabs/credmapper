@@ -11,6 +11,7 @@ import { indexAccounts } from './providers/account';
 import assignAccountInfo from './cred/assignAccountInfo';
 import assignERC20s from './cred/assignERC20';
 import { indexERC20 } from './providers/erc20/erc20';
+import { formatBytes } from './utils';
 
 const sync = async () => {
   /*
@@ -31,6 +32,12 @@ const sync = async () => {
 
   //  await indexAccounts(connectedAddresses);
   //  await assignAccountInfo();
+
+  // Log memory usage
+  setInterval(() => {
+    const memoryUsage = process.memoryUsage();
+    console.log(`Heap Used: ${formatBytes(memoryUsage.heapUsed)}`);
+  }, 5000);
 
   await indexERC20();
   // await assignERC20s();
