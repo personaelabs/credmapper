@@ -1,16 +1,18 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
 import { fcReplicaClient } from '../providers/farcaster';
-import { Network } from 'alchemy-sdk';
+import * as chains from 'viem/chains';
+
+const indexChains = [chains.mainnet, chains.optimism];
 
 const assignAccountInfo = async () => {
   // Contract deployers
-  for (const network of [Network.ETH_MAINNET, Network.OPT_MAINNET]) {
-    const cred = `${network}_contractDeployer`;
+  for (const chain of indexChains) {
+    const cred = `${chain.name}_contractDeployer`;
     const addresses = (
       await prisma.addressInfo.findMany({
         where: {
-          network,
+          network: chain.name,
           contractDeployments: {
             isEmpty: false,
           },

@@ -1,14 +1,18 @@
 import { ERC20TransferEvent, TransferEvent } from '@prisma/client';
 import prisma from '../../prisma';
-import { GetFilterLogsReturnType, Hex, Chain } from 'viem';
+import { GetFilterLogsReturnType, Hex, Chain, PublicClient, HttpTransport } from 'viem';
 import { processLogs } from '../../lib/processLogs';
 import * as chains from 'viem/chains';
 import CONTRACTS from './contracts';
 import { TRANSFER_EVENT } from './abi/abi';
 import { ContractWithDeployedBlock } from '../../types';
+import { getClient, NUM_MAINNET_CLIENTS } from '../ethRpc';
 
 // Sync `Transfer` events from ERC20 contracts
-const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedBlock) => {
+const indexTransferEvents = async (
+  client: PublicClient<HttpTransport, Chain>,
+  contract: ContractWithDeployedBlock,
+) => {
   const latestSyncedEvent = await prisma.eRC20TransferEvent.findFirst({
     select: {
       blockNumber: true,
@@ -63,14 +67,35 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
     });
   };
 
-  await processLogs(chain, TRANSFER_EVENT, fromBlock, processTransfers, contract, BigInt(2000));
+  await processLogs(client, TRANSFER_EVENT, fromBlock, processTransfers, contract, BigInt(2000));
+};
+
+const processChunk = async (
+  client: PublicClient<HttpTransport, Chain>,
+  contracts: ContractWithDeployedBlock[],
+) => {
+  for (const contract of contracts) {
+    await indexTransferEvents(client, contract);
+  }
 };
 
 export const indexERC20 = async () => {
   const chain = chains.mainnet;
-  // 1. Determine what block height to start syncing from.
 
-  for (const contract of CONTRACTS) {
-    await indexTransferEvents(chain, contract);
+  const promises = [];
+  const CHUNK_SIZE = Math.ceil(CONTRACTS.length / NUM_MAINNET_CLIENTS);
+
+  console.log(`Synching ${CONTRACTS.length} contracts using ${NUM_MAINNET_CLIENTS} nodes`);
+
+  for (let i = 0; i < CONTRACTS.length; i += CHUNK_SIZE) {
+    const clientIndex = i / CHUNK_SIZE;
+    const client = getClient(chain, clientIndex);
+
+    console.log(`Client ${clientIndex} syncing ${CHUNK_SIZE} contracts`);
+    const chunk = CONTRACTS.slice(i, i + CHUNK_SIZE);
+
+    promises.push(processChunk(client, chunk));
   }
+
+  await Promise.all(promises);
 };

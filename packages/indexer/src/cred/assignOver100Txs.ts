@@ -1,15 +1,15 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
 import { fcReplicaClient } from '../providers/farcaster';
-import { networks } from '../providers/txCount';
+import { indexChains } from '../providers/txCount';
 
 const assignOver100Txs = async () => {
-  for (const network of networks) {
-    const cred = `${network}_over100Txs`;
+  for (const chain of indexChains) {
+    const cred = `${chain}_over100Txs`;
     const addresses = (
       await prisma.txCount.findMany({
         where: {
-          network,
+          network: chain.name,
           txCount: {
             gt: 100,
           },

@@ -1,14 +1,18 @@
 import { TransferEvent } from '@prisma/client';
 import prisma from '../../prisma';
-import { GetFilterLogsReturnType, Hex, Chain } from 'viem';
+import { GetFilterLogsReturnType, Hex, Chain, PublicClient, HttpTransport } from 'viem';
 import { processLogs } from '../../lib/processLogs';
 import * as chains from 'viem/chains';
 import CONTRACT_EVENTS from './contracts';
 import { TRANSFER_EVENT } from './abi/abi';
 import { ContractWithDeployedBlock } from '../../types';
+import { getClient } from '../ethRpc';
 
 // Sync `Transfer` events from ERC721 contracts
-const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedBlock) => {
+const indexTransferEvents = async (
+  client: PublicClient<HttpTransport, Chain>,
+  contract: ContractWithDeployedBlock,
+) => {
   const latestSyncedEvent = await prisma.transferEvent.findFirst({
     select: {
       blockNumber: true,
@@ -18,7 +22,7 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
     },
     where: {
       contractAddress: contract.address,
-      chain: chain.name,
+      chain: client.chain.name,
     },
   });
 
@@ -47,7 +51,7 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
               tokenId: tokenId.toString(),
               blockNumber: log.blockNumber,
               transactionHash: log.transactionHash,
-              chain: chain.name,
+              chain: client.chain.name,
             };
           } else {
             return false;
@@ -62,14 +66,14 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
     });
   };
 
-  await processLogs(chain, TRANSFER_EVENT, fromBlock, processTransfers, contract, BigInt(1000));
+  await processLogs(client, TRANSFER_EVENT, fromBlock, processTransfers, contract, BigInt(1000));
 };
 
 export const indexERC721 = async () => {
   const chain = chains.mainnet;
-
+  const client = getClient(chain);
   // Index all transfer events
   for (const contract of CONTRACT_EVENTS) {
-    await indexTransferEvents(chain, contract);
+    await indexTransferEvents(client, contract);
   }
 };

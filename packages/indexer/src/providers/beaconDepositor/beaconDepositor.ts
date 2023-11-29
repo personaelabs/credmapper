@@ -57,7 +57,7 @@ export const indexBeaconDepositors = async () => {
   });
 
   await processLogs(
-    chains.mainnet,
+    client,
     DEPOSIT_EVENT,
     latestEvent?.blockNumber || FIRST_DEPOSIT_AT,
     processor,

@@ -1,6 +1,4 @@
 import { Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'viem';
-import prisma from '../prisma';
-import { getClient } from '../providers/ethRpc';
 import { AbiEvent } from 'abitype';
 import { ContractWithDeployedBlock } from '../types';
 import { sleep, trimAddress } from '../utils';
@@ -8,15 +6,13 @@ import { sleep, trimAddress } from '../utils';
 // Sync logs for a specific event.
 // Use `syncContractLogs` to sync logs for a specific contract.
 export const processLogs = async <T extends Transport, C extends Chain>(
-  chain: Chain,
+  client: PublicClient<T, C>,
   event: AbiEvent,
   fromBlock: bigint,
   processor: (logs: GetFilterLogsReturnType) => Promise<void>,
   contract: ContractWithDeployedBlock,
   batchSize: bigint = BigInt(2000),
 ) => {
-  const client = getClient(chain);
-
   // Get the latest block number
   const latestBlock = await client.getBlockNumber();
 

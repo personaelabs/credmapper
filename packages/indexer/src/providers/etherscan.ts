@@ -1,15 +1,16 @@
 import 'dotenv/config';
 import axios from 'axios';
-import { Network } from 'alchemy-sdk';
+import * as chains from 'viem/chains';
+import { Chain } from 'viem';
 
-const etherscan = (network: Network) => {
+const etherscan = (network: Chain) => {
   let baseURL, apikey;
   switch (network) {
-    case Network.ETH_MAINNET:
+    case chains.mainnet:
       baseURL = 'https://api.etherscan.io/api';
       apikey = process.env.ETHERSCAN_API_KEY;
       break;
-    case Network.OPT_MAINNET:
+    case chains.optimism:
       baseURL = 'https://api-optimistic.etherscan.io/api';
       apikey = process.env.OP_ETHERSCAN_API_KEY;
       break;

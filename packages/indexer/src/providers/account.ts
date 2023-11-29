@@ -4,13 +4,13 @@ import { batchRun, sleep } from '../utils';
 import prisma from '../prisma';
 import { TxListResponse } from '../types';
 import { AddressInfo } from '@prisma/client';
-import { Network } from 'alchemy-sdk';
+import * as chains from 'viem/chains';
 
-const networks = [Network.ETH_MAINNET, Network.OPT_MAINNET];
+const indexChains = [chains.mainnet, chains.optimism];
 export const indexAccounts = async (addresses: Hex[]) => {
   await Promise.all(
-    networks.map(async (network) => {
-      const etherscanClient = etherscan(network);
+    indexChains.map(async (chain) => {
+      const etherscanClient = etherscan(chain);
       await batchRun(
         async (batch) => {
           const addressesInfo = (
@@ -36,7 +36,7 @@ export const indexAccounts = async (addresses: Hex[]) => {
                   const contractDeployments = result.data.result.filter((tx: any) => tx.to === '');
 
                   return {
-                    network,
+                    network: chain.name,
                     address: address.toLowerCase(),
                     txCount,
                     firstTx: firstTx.hash,
