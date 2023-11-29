@@ -28,38 +28,36 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
   console.log('fromBlock', fromBlock);
 
   const processTransfers = async (logs: GetFilterLogsReturnType) => {
-    const data = (
-      await Promise.all(
-        logs.map(async (log) => {
-          const contractAddress = log.address.toLowerCase() as Hex;
-          // @ts-ignore
-          const from = log.args.from;
-          // @ts-ignore
-          const to = log.args.to;
-          // @ts-ignore
-          const value = log.args.value.toString();
+    const data = logs
+      .map((log) => {
+        const contractAddress = log.address.toLowerCase() as Hex;
+        // @ts-ignore
+        const from = log.args.from;
+        // @ts-ignore
+        const to = log.args.to;
+        // @ts-ignore
+        const value = log.args.value.toString();
 
-          const logIndex = BigInt(log.logIndex);
-          const transactionIndex = BigInt(log.transactionIndex);
+        const logIndex = BigInt(log.logIndex);
+        const transactionIndex = BigInt(log.transactionIndex);
 
-          if (from && to && value != null && logIndex && transactionIndex) {
-            return {
-              contractAddress,
-              from: from.toLowerCase() as Hex,
-              to: to.toLowerCase() as Hex,
-              value,
-              blockNumber: log.blockNumber,
-              transactionIndex: transactionIndex,
-              logIndex: logIndex,
-              transactionHash: log.transactionHash,
-              chain: chain.name,
-            };
-          } else {
-            return false;
-          }
-        }),
-      )
-    ).filter((data) => data) as ERC20TransferEvent[];
+        if (from && to && value != null && logIndex && transactionIndex) {
+          return {
+            contractAddress,
+            from: from.toLowerCase() as Hex,
+            to: to.toLowerCase() as Hex,
+            value,
+            blockNumber: log.blockNumber,
+            transactionIndex: transactionIndex,
+            logIndex: logIndex,
+            transactionHash: log.transactionHash,
+            chain: chain.name,
+          };
+        } else {
+          return false;
+        }
+      })
+      .filter((data) => data) as ERC20TransferEvent[];
 
     await prisma.eRC20TransferEvent.createMany({
       data,

@@ -36,7 +36,7 @@ export const processLogs = async <T extends Transport, C extends Chain>(
         .catch((err) => {
           console.log(err);
         });
-      await sleep(200);
+      await sleep(150);
 
       const endTime = Date.now();
       const timeTaken = (endTime - startTime) / 1000;
