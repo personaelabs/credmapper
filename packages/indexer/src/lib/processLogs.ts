@@ -20,19 +20,15 @@ export const processLogs = async <T extends Transport, C extends Chain>(
     try {
       const startTime = Date.now();
 
-      client
-        .getLogs({
-          address: contract.address,
-          event,
-          fromBlock: batchFrom,
-          toBlock: batchFrom + batchSize,
-          strict: true,
-        })
-        .then(processor)
-        .catch((err) => {
-          console.log(err);
-        });
-      await sleep(150);
+      const logs = await client.getLogs({
+        address: contract.address,
+        event,
+        fromBlock: batchFrom,
+        toBlock: batchFrom + batchSize,
+        strict: true,
+      });
+
+      await processor(logs);
 
       const endTime = Date.now();
       const timeTaken = (endTime - startTime) / 1000;
@@ -41,7 +37,7 @@ export const processLogs = async <T extends Transport, C extends Chain>(
       console.log(
         `Sync: ${trimAddress(contract.address)} (${
           client.chain.name
-        }) ${batchFrom.toLocaleString()}/${latestBlock.toLocaleString()}, ${blocksPerSecond}/bps`,
+        }) ${batchFrom.toLocaleString()}/${latestBlock.toLocaleString()}, ${blocksPerSecond} bps`,
       );
     } catch (err) {
       console.log(
