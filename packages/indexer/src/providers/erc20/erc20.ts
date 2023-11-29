@@ -18,7 +18,6 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
     },
     where: {
       contractAddress: contract.address,
-      chain: chain.name,
     },
   });
 
@@ -38,8 +37,8 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
         // @ts-ignore
         const value = log.args.value.toString();
 
-        const logIndex = BigInt(log.logIndex);
-        const transactionIndex = BigInt(log.transactionIndex);
+        const logIndex = log.logIndex;
+        const transactionIndex = log.transactionIndex;
 
         if (from && to && value != null && logIndex && transactionIndex) {
           return {
@@ -51,7 +50,6 @@ const indexTransferEvents = async (chain: Chain, contract: ContractWithDeployedB
             transactionIndex: transactionIndex,
             logIndex: logIndex,
             transactionHash: log.transactionHash,
-            chain: chain.name,
           };
         } else {
           return false;
