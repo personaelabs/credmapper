@@ -38,7 +38,7 @@ model ERC20TransferEvent {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@index([to, from, contractAddress])
+  @@index([to, from, contractAddress, blockNumber])
 }
 
 model BeaconDepositEvent {
