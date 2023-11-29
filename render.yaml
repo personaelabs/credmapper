@@ -8,7 +8,29 @@ services:
     branch: main
     schedule: '0 0 * * *'
     buildCommand: pnpm i && pnpm -F db migrate:prod
-    startCommand: pnpm -F indexer sync
+    startCommand: pnpm -F indexer indexLogs
+    buildFilter:
+      paths:
+        - packages/indexer/**
+        - packages/db/**
+      ignoredPaths:
+        - packages/cred-api/**
+        - packages/coindata/**
+        - packages/app/**
+    envVars:
+      - fromGroup: credmapper
+      - key: NODE_VERSION
+        value: 18.14.0
+  - type: cron
+    name: credmapper-2
+    plan: standard
+    env: node
+    region: oregon
+    rootDir: ./
+    branch: main
+    schedule: '*/5 * * * *'
+    buildCommand: pnpm i && pnpm -F db migrate:prod
+    startCommand: pnpm -F indexer indexCred
     buildFilter:
       paths:
         - packages/indexer/**

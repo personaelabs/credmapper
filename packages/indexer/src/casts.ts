@@ -1,5 +1,4 @@
 import prisma from './prisma';
-import { Hex } from 'viem';
 import { getCasts } from './providers/farcaster';
 import { batchRun } from './utils';
 import { IndexedCast } from './types';

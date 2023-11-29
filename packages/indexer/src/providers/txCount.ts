@@ -3,12 +3,17 @@ import { batchRun } from '../utils';
 import prisma from '../prisma';
 import * as chains from 'viem/chains';
 import { getClient } from './ethRpc';
+import { getAllAddresses } from './farcaster';
 
 export const indexChains = [chains.mainnet, chains.optimism, chains.base];
 
 export const indexTxCount = async () => {
+  const connectedAddresses = (await getAllAddresses())
+    .map((r) => r.verified_addresses as Hex[])
+    .flat();
+
   // Get addresses that don't have > 100 txs as of the last sync
-  const addresses = (
+  const addressesWithManyTxs = (
     await prisma.txCount.findMany({
       where: {
         txCount: {
@@ -20,6 +25,11 @@ export const indexTxCount = async () => {
       },
     })
   ).map((r) => r.address as Hex);
+
+  // Remove addresses that already have > 100 txs
+  const indexAddresses = connectedAddresses.filter(
+    (address) => !addressesWithManyTxs.includes(address),
+  );
 
   for (const chain of indexChains) {
     const client = getClient(chain);
@@ -42,7 +52,7 @@ export const indexTxCount = async () => {
           console.error(err);
         }
       },
-      addresses,
+      indexAddresses,
       `txCount (${chain.name})`,
       20,
     );
