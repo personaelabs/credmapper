@@ -3,6 +3,7 @@ import prisma from '../prisma';
 import { getClient } from '../providers/ethRpc';
 import { AbiEvent } from 'abitype';
 import { ContractWithDeployedBlock } from '../types';
+import { sleep, trimAddress } from '../utils';
 
 // Sync logs for a specific event.
 // Use `syncContractLogs` to sync logs for a specific contract.
@@ -20,22 +21,32 @@ export const processLogs = async <T extends Transport, C extends Chain>(
   const latestBlock = await client.getBlockNumber();
 
   for (let batchFrom = fromBlock; batchFrom < latestBlock; batchFrom += batchSize) {
-    console.log(
-      `Sync: ${event.name} (${
-        client.chain.name
-      }) ${batchFrom.toLocaleString()}/${latestBlock.toLocaleString()}`,
-    );
-
     try {
-      const logs = await client.getLogs({
-        address: contract.address,
-        event,
-        fromBlock: batchFrom,
-        toBlock: batchFrom + batchSize,
-        strict: true,
-      });
+      const startTime = Date.now();
 
-      await processor(logs);
+      client
+        .getLogs({
+          address: contract.address,
+          event,
+          fromBlock: batchFrom,
+          toBlock: batchFrom + batchSize,
+          strict: true,
+        })
+        .then(processor)
+        .catch((err) => {
+          console.log(err);
+        });
+      await sleep(200);
+
+      const endTime = Date.now();
+      const timeTaken = (endTime - startTime) / 1000;
+
+      const blocksPerSecond = Math.round(Number(batchSize) / timeTaken);
+      console.log(
+        `Sync: ${trimAddress(contract.address)} (${
+          client.chain.name
+        }) ${batchFrom.toLocaleString()}/${latestBlock.toLocaleString()}, ${blocksPerSecond}/bps`,
+      );
     } catch (err) {
       console.log(
         `Failed to fetch ${event.name} events from ${batchFrom} to ${batchFrom + batchSize}`,

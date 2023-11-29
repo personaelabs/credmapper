@@ -1,3 +1,4 @@
+import { Hex } from 'viem';
 import * as _chains from 'viem/chains';
 
 export const sleep = (ms: number) => {
@@ -35,4 +36,8 @@ export const batchRun = async <T>(
     const batch = params.slice(i, i + batchSize);
     await fn(batch);
   }
+};
+
+export const trimAddress = (address: Hex) => {
+  return address.slice(0, 6) + '...' + address.slice(-4);
 };
