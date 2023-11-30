@@ -5,7 +5,7 @@ import { indexChains } from '../providers/txCount';
 
 const assignOver100Txs = async () => {
   for (const chain of indexChains) {
-    const cred = `${chain}_over100Txs`;
+    const cred = `${chain.name}_over100Txs`;
     const addresses = (
       await prisma.txCount.findMany({
         where: {

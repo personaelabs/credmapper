@@ -1,34 +1,36 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
-import CONTRACTS from '../providers/erc721/contracts';
+import EVENTS from '../providers/poap/events';
 import { CurrentOwnersQueryResult } from '../types';
 import { getAllAddresses } from '../providers/farcaster';
 import { Hex } from 'viem';
 
-const assignERC721s = async () => {
+const assignPoap = async () => {
   const userAddresses = await getAllAddresses();
   const connectedAddresses = userAddresses.map((r) => r.verified_addresses as Hex[]).flat();
 
-  for (const contract of CONTRACTS) {
-    const cred = `${contract.name}_owner`;
+  for (const event of EVENTS) {
+    const cred = `${event.name}_owner`;
     const result = await prisma.$queryRaw<CurrentOwnersQueryResult[]>`
       WITH partitioned AS (
         SELECT
-          *,
-          ROW_NUMBER() OVER (PARTITION BY "tokenId" ORDER BY "blockNumber" DESC) AS row_number
+            *,
+            ROW_NUMBER() OVER (PARTITION BY "tokenId" ORDER BY "blockNumber" DESC) AS row_number
         FROM
-          "TransferEvent"
+            "PoapTransferEvent"
         WHERE
-        "contractId" = ${contract.id}
-        AND "to" IN (${Prisma.join(connectedAddresses)})
+            "tokenId" in( SELECT DISTINCT
+                "tokenId" FROM "PoapEventTokenEvent"
+            WHERE
+                "eventId" = ${event.id})
+            AND "to" IN(${Prisma.join(connectedAddresses)})
       )
-      SELECT
-        "to" as "owner",
-        "tokenId"
-      FROM
-        partitioned
-      WHERE
-        row_number = 1 
+        SELECT
+            "to" AS "owner", "tokenId"
+        FROM
+            partitioned
+        WHERE
+            row_number = 1
     `;
 
     const data = result
@@ -55,4 +57,4 @@ const assignERC721s = async () => {
   }
 };
 
-export default assignERC721s;
+export default assignPoap;

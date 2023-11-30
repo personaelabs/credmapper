@@ -65,6 +65,40 @@ model ERC20TransferEvent2 {
   @@index([blockNumber])
 }
 
+model PoapTransferEvent {
+  transactionIndex Int
+  logIndex         Int
+  blockNumber      BigInt
+  from             String
+  to               String
+  tokenId          BigInt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([blockNumber, transactionIndex])
+  @@index([tokenId])
+  @@index([from])
+  @@index([blockNumber])
+  @@index([to])
+}
+
+model PoapEventTokenEvent {
+  transactionIndex Int
+  logIndex         Int
+  blockNumber      BigInt
+  tokenId          BigInt
+  eventId          BigInt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([blockNumber, transactionIndex])
+  @@index([tokenId])
+  @@index([eventId])
+  @@index([blockNumber])
+}
+
 model BeaconDepositEvent {
   transactionHash String @id
   value           String
