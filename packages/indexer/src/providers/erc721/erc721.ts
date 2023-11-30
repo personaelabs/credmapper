@@ -21,8 +21,7 @@ const indexTransferEvents = async (
       blockNumber: 'desc',
     },
     where: {
-      contractAddress: contract.address,
-      chain: client.chain.name,
+      contractId: contract.id,
     },
   });
 
@@ -34,8 +33,6 @@ const indexTransferEvents = async (
     const data = (
       await Promise.all(
         logs.map((log) => {
-          const contractAddress = log.address.toLowerCase() as Hex;
-
           // @ts-ignore
           const from = log.args.from;
           // @ts-ignore
@@ -45,13 +42,12 @@ const indexTransferEvents = async (
 
           if (from && to && tokenId != null) {
             return {
-              contractAddress,
+              contractId: contract.id,
               from: from.toLowerCase() as Hex,
               to: to.toLowerCase() as Hex,
-              tokenId: tokenId.toString(),
+              tokenId: tokenId,
               blockNumber: log.blockNumber,
               transactionHash: log.transactionHash,
-              chain: client.chain.name,
             };
           } else {
             return false;

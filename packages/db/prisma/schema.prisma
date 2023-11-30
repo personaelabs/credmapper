@@ -15,14 +15,15 @@ model TransferEvent {
   blockNumber     BigInt
   from            String
   to              String
-  tokenId         String
-  contractAddress String
-  chain           String
+  tokenId         BigInt
+  contractId      Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([to])
+  @@index([from])
+  @@index([contractId])
 }
 
 model ERC20TransferEvent {
@@ -42,6 +43,25 @@ model ERC20TransferEvent {
   @@index([to])
   @@index([from])
   @@index([contractAddress])
+  @@index([blockNumber])
+}
+
+model ERC20TransferEvent2 {
+  transactionHash  String @id
+  transactionIndex Int
+  logIndex         Int    @db.SmallInt
+  blockNumber      BigInt
+  from             String
+  to               String
+  value            String
+  contractId       Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([to])
+  @@index([from])
+  @@index([contractId])
   @@index([blockNumber])
 }
 
@@ -105,7 +125,7 @@ model PackagedCast {
   repliesCount      BigInt    @default(0)
   hash              String
   parentUrl         String?
-  score             Float     @default(0)
+  score             BigInt    @default(0)
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

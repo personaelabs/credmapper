@@ -3,6 +3,7 @@ import { ContractWithDeployedBlock } from '../../types';
 import indexedCoins from './indexedCoins.json';
 
 const CONTRACTS: ContractWithDeployedBlock[] = indexedCoins.map((coin) => ({
+  id: coin.dbId,
   name: coin.id,
   address: coin.contract as Hex,
   deployedBlock: BigInt(coin.deployedBlock),
