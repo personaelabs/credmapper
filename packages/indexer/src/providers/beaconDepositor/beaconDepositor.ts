@@ -9,6 +9,7 @@ import { ContractWithDeployedBlock } from '../../types';
 
 const FIRST_DEPOSIT_AT = BigInt(11184900); // A little before the first deposit event
 const BEACON_CONTRACT: ContractWithDeployedBlock = {
+  id: 301,
   address: '0x00000000219ab540356cbb839cbe05303d7705fa',
   deployedBlock: FIRST_DEPOSIT_AT,
 };
