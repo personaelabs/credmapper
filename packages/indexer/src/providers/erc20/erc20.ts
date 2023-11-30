@@ -1,4 +1,4 @@
-import { ERC20TransferEvent2, TransferEvent } from '@prisma/client';
+import { ERC20TransferEvent2 } from '@prisma/client';
 import prisma from '../../prisma';
 import { GetFilterLogsReturnType, Hex, Chain, PublicClient, HttpTransport } from 'viem';
 import { processLogs } from '../../lib/processLogs';
@@ -37,7 +37,6 @@ const indexTransferEvents = async (
   const processTransfers = async (logs: GetFilterLogsReturnType) => {
     const data = logs
       .map((log) => {
-        const contractAddress = log.address.toLowerCase() as Hex;
         // @ts-ignore
         const from = log.args.from;
         // @ts-ignore
@@ -48,20 +47,15 @@ const indexTransferEvents = async (
         const logIndex = log.logIndex;
         const transactionIndex = log.transactionIndex;
 
-        if (from && to && value != null && logIndex && transactionIndex) {
-          return {
-            contractId: contract.id,
-            from: from.toLowerCase() as Hex,
-            to: to.toLowerCase() as Hex,
-            value,
-            blockNumber: log.blockNumber,
-            transactionIndex: transactionIndex,
-            logIndex: logIndex,
-            transactionHash: log.transactionHash,
-          };
-        } else {
-          return false;
-        }
+        return {
+          contractId: contract.id,
+          from: from.toLowerCase() as Hex,
+          to: to.toLowerCase() as Hex,
+          value,
+          blockNumber: log.blockNumber,
+          transactionIndex: transactionIndex,
+          logIndex: logIndex,
+        };
       })
       .filter((data) => data) as ERC20TransferEvent2[];
 
