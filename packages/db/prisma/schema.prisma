@@ -34,6 +34,7 @@ model ERC20TransferEvent {
   to               String
   value            String
   contractAddress  String
+  contractId       Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

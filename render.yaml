@@ -28,9 +28,9 @@ services:
     region: oregon
     rootDir: ./
     branch: main
-    schedule: '*/5 * * * *'
+    schedule: '0 0 * * *'
     buildCommand: pnpm i && pnpm -F db migrate:prod
-    startCommand: pnpm -F indexer indexCred
+    startCommand: pnpm -F indexer exec ts-node ./src/setIds.ts
     buildFilter:
       paths:
         - packages/indexer/**
