@@ -175,6 +175,7 @@ export interface TxListResponse {
 }
 
 export interface ContractWithDeployedBlock {
+  id: number;
   name?: string;
   address: Hex;
   deployedBlock: bigint;
