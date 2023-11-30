@@ -13,6 +13,8 @@ const indexTransferEvents = async (
   client: PublicClient<HttpTransport, Chain>,
   contract: ContractWithDeployedBlock,
 ) => {
+  const label = `find latest event ${contract.address}`;
+  console.time(label);
   const latestSyncedEvent = await prisma.eRC20TransferEvent.findFirst({
     select: {
       blockNumber: true,
@@ -24,6 +26,8 @@ const indexTransferEvents = async (
       contractAddress: contract.address,
     },
   });
+
+  console.timeEnd(label);
 
   const fromBlock = latestSyncedEvent
     ? latestSyncedEvent.blockNumber
@@ -61,10 +65,14 @@ const indexTransferEvents = async (
       })
       .filter((data) => data) as ERC20TransferEvent[];
 
+    const label = `createMany ${contract.address}`;
+    console.time(label);
     await prisma.eRC20TransferEvent.createMany({
       data,
       skipDuplicates: true,
     });
+
+    console.timeEnd(label);
   };
 
   await processLogs(client, TRANSFER_EVENT, fromBlock, processTransfers, contract, BigInt(2000));
@@ -92,7 +100,7 @@ export const indexERC20 = async () => {
     const client = getClient(chain, clientIndex);
 
     console.log(`Client ${clientIndex} syncing ${CHUNK_SIZE} contracts`);
-    const chunk = CONTRACTS.slice(i, i + CHUNK_SIZE);
+    const chunk = CONTRACTS.slice(i, i + CHUNK_SIZE).reverse();
 
     promises.push(processChunk(client, chunk));
   }
