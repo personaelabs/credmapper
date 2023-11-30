@@ -73,9 +73,10 @@ const indexCoins = async () => {
   fs.writeFileSync(
     'indexedCoins.json',
     JSON.stringify(
-      indexedCoins.map((indexedCoin) => ({
+      indexedCoins.map((indexedCoin, i) => ({
         ...indexedCoin,
         deployedBlock: indexedCoin.deployedBlock.toString(),
+        dbId: i + 1,
       })),
       null,
       2,
