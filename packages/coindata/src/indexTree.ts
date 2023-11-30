@@ -3,6 +3,7 @@ import prisma from './prisma';
 import { IndexedCoin, QueryTransfersResult } from './types';
 import fs from 'fs';
 import { findBlockNumberByTimestamp } from './utils';
+import { createObjectCsvWriter } from 'csv-writer';
 
 const holdings = async (contractAddress: string, toBlock: bigint) => {
   const transfers = await prisma.$queryRaw<QueryTransfersResult[]>`
@@ -56,11 +57,22 @@ const indexTree = async () => {
   for (const indexedCoin of indexedCoins) {
     for (const marketCapDurations of indexedCoin.marketCapDurations) {
       const toBlock = await findBlockNumberByTimestamp(new Date(marketCapDurations.endDate));
+      console.time(`Getting holdings for ${indexedCoin.id} (${marketCapDurations.endDate})`);
       const holders = await holdings(indexedCoin.contract, toBlock);
+      console.timeEnd(`Getting holdings for ${indexedCoin.id} (${marketCapDurations.endDate})`);
 
       const holdersWithBalance = holders.filter((holder) => holder.holdings > 0);
 
-      // TODO: Save the addresses
+      // Specify the path to the CSV file and define the headers
+      const csvWriter = createObjectCsvWriter({
+        path: `${indexedCoin.id}-${marketCapDurations.endDate}.csv`,
+        header: [
+          { id: 'address', title: 'address' },
+          { id: 'holdings', title: 'value' },
+        ],
+      });
+
+      await csvWriter.writeRecords(holdersWithBalance);
     }
   }
 };
