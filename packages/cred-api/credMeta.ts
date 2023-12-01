@@ -31,19 +31,22 @@ const credMeta = [
     id: 'SuperRare Collector Badge (2021)_owner',
     name: 'SuperRare Collector (2021)',
     image:
-      'https://dl.openseauserdata.com/cache/originImage/files/6d53f54d19b173ce9e4c276908368f6b.gif',
+      // 'https://dl.openseauserdata.com/cache/originImage/files/6d53f54d19b173ce9e4c276908368f6b.gif',
+      'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20Collector%20(2021).png',
   },
   {
     id: 'SuperRare Artist Badge (2021)_owner',
     name: 'SuperRare Artist (2021)',
     image:
-      'https://i.seadn.io/gae/dcq7SbLBaH7Igr42JS8C2_HRAayoNcSRCz6jw9Stt8t44sEvv0RtniyJKb1TeBwWBzjP8VxpfHBniq1V6Mw_h9nP9GAyZN5FVxQU_y8?auto=format&dpr=1&w=1000',
+      // 'https://i.seadn.io/gae/dcq7SbLBaH7Igr42JS8C2_HRAayoNcSRCz6jw9Stt8t44sEvv0RtniyJKb1TeBwWBzjP8VxpfHBniq1V6Mw_h9nP9GAyZN5FVxQU_y8?auto=format&dpr=1&w=1000',
+      'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20Artist%20(2021).png',
   },
   {
     id: 'SuperRare OG Member Badge_owner',
     name: 'SuperRare OG Member',
     image:
-      'https://downloads.intercomcdn.com/i/o/459919625/19f9536bc26f9bd56fdf0d02/2021_XCOPY_SR_BADGE_+%281%29.gif',
+      //'https://downloads.intercomcdn.com/i/o/459919625/19f9536bc26f9bd56fdf0d02/2021_XCOPY_SR_BADGE_+%281%29.gif',
+      'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20OG.png',
   },
 ];
 
