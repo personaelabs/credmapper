@@ -30,7 +30,7 @@ services:
     branch: main
     schedule: '0 0 * * *'
     buildCommand: pnpm i && pnpm -F db migrate:prod
-    startCommand: pnpm -F indexer exec ts-node ./src/setIds.ts
+    startCommand: pnpm -F indexer exec ts-node ./src/indexCred.ts
     buildFilter:
       paths:
         - packages/indexer/**

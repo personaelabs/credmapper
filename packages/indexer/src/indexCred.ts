@@ -14,7 +14,7 @@ const indexCred = async () => {
   // await assignOver100Txs();
 
   await indexERC721();
-  // await assignERC721s();
+  await assignERC721s();
 
   // await indexAccounts(connectedAddresses);
   // await assignAccountInfo();
