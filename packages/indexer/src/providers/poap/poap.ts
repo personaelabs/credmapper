@@ -15,18 +15,26 @@ const POAP_CONTRACT = {
 };
 
 const indexEventTransferEvents = async (client: PublicClient<HttpTransport, Chain>) => {
-  const latestSyncedEvent = await prisma.poapTransferEvent.findFirst({
+  const operationId = 'PoapTransferEvent';
+
+  const latestSyncedBlock = await prisma.syncInfo.findFirst({
     select: {
       blockNumber: true,
     },
-    orderBy: {
-      blockNumber: 'desc',
+    where: {
+      operation: operationId,
     },
   });
 
-  const fromBlock = latestSyncedEvent ? latestSyncedEvent.blockNumber : BigInt(POAP_DEPLOYED_BLOCK);
+  const fromBlock = latestSyncedBlock ? latestSyncedBlock.blockNumber : BigInt(POAP_DEPLOYED_BLOCK);
 
-  const processor = async (logs: GetFilterLogsReturnType) => {
+  const processor = async (
+    logs: GetFilterLogsReturnType,
+    args?: {
+      fromBlock: bigint;
+      toBlock: bigint;
+    },
+  ) => {
     const data = logs.map((log) => {
       // @ts-ignore
       const from = log.args.from;
@@ -48,9 +56,24 @@ const indexEventTransferEvents = async (client: PublicClient<HttpTransport, Chai
       } as PoapTransferEvent;
     });
 
-    await prisma.poapTransferEvent.createMany({
-      data,
-      skipDuplicates: true,
+    if (data.length > 0) {
+      await prisma.poapTransferEvent.createMany({
+        data,
+        skipDuplicates: true,
+      });
+    }
+
+    const syncInfo = {
+      operation: operationId,
+      blockNumber: args!.toBlock,
+    };
+
+    await prisma.syncInfo.upsert({
+      where: {
+        operation: operationId,
+      },
+      create: syncInfo,
+      update: syncInfo,
     });
   };
 
@@ -62,21 +85,25 @@ const indexEventTokenEvents = async (
   client: PublicClient<HttpTransport, Chain>,
   eventId: number,
 ) => {
-  const latestSyncedEvent = await prisma.poapEventTokenEvent.findFirst({
+  const operationId = `PoapEventTokenEvent-${eventId}`;
+  const latestSyncedBlock = await prisma.syncInfo.findFirst({
     select: {
       blockNumber: true,
     },
-    orderBy: {
-      blockNumber: 'desc',
-    },
     where: {
-      eventId,
+      operation: operationId,
     },
   });
 
-  const fromBlock = latestSyncedEvent ? latestSyncedEvent.blockNumber : BigInt(POAP_DEPLOYED_BLOCK);
+  const fromBlock = latestSyncedBlock ? latestSyncedBlock.blockNumber : BigInt(POAP_DEPLOYED_BLOCK);
 
-  const processor = async (logs: GetFilterLogsReturnType) => {
+  const processor = async (
+    logs: GetFilterLogsReturnType,
+    args?: {
+      fromBlock: bigint;
+      toBlock: bigint;
+    },
+  ) => {
     const data = logs
       .map((log) => {
         // @ts-ignore
@@ -107,6 +134,19 @@ const indexEventTokenEvents = async (
         skipDuplicates: true,
       });
     }
+
+    const syncInfo = {
+      operation: operationId,
+      blockNumber: args!.toBlock,
+    };
+
+    await prisma.syncInfo.upsert({
+      where: {
+        operation: operationId,
+      },
+      create: syncInfo,
+      update: syncInfo,
+    });
   };
 
   await processLogs(client, EVENT_TOKEN_EVENT, fromBlock, processor, POAP_CONTRACT, BigInt(2000));

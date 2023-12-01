@@ -10,6 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model SyncInfo {
+  operation   String   @id
+  blockNumber BigInt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
 model TransferEvent {
   transactionHash String @id
   blockNumber     BigInt
@@ -24,26 +31,6 @@ model TransferEvent {
   @@index([to])
   @@index([from])
   @@index([contractId])
-}
-
-model ERC20TransferEvent {
-  transactionHash  String @id
-  transactionIndex Int
-  logIndex         Int    @db.SmallInt
-  blockNumber      BigInt
-  from             String
-  to               String
-  value            String
-  contractAddress  String
-  contractId       Int    @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([to])
-  @@index([from])
-  @@index([contractAddress])
-  @@index([blockNumber])
 }
 
 model ERC20TransferEvent2 {

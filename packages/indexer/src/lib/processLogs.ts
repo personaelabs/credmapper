@@ -9,7 +9,13 @@ export const processLogs = async <T extends Transport, C extends Chain>(
   client: PublicClient<T, C>,
   event: AbiEvent,
   fromBlock: bigint,
-  processor: (logs: GetFilterLogsReturnType) => Promise<void>,
+  processor: (
+    logs: GetFilterLogsReturnType,
+    args?: {
+      fromBlock: bigint;
+      toBlock: bigint;
+    },
+  ) => Promise<void>,
   contract: ContractWithDeployedBlock,
   batchSize: bigint = BigInt(2000),
 ) => {
@@ -20,15 +26,19 @@ export const processLogs = async <T extends Transport, C extends Chain>(
     try {
       const startTime = Date.now();
 
+      const toBlock = batchFrom + batchSize;
       const logs = await client.getLogs({
         address: contract.address,
         event,
         fromBlock: batchFrom,
-        toBlock: batchFrom + batchSize,
+        toBlock,
         strict: true,
       });
 
-      await processor(logs);
+      await processor(logs, {
+        fromBlock: batchFrom,
+        toBlock,
+      });
 
       const endTime = Date.now();
       const timeTaken = (endTime - startTime) / 1000;

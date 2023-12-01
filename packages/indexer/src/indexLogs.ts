@@ -10,12 +10,11 @@ const indexLogs = async () => {
   // await assignERC721s();
   //  await indexAccounts(connectedAddresses);
   //  await assignAccountInfo();
-
   await indexERC20();
   // await assignERC20s();
   // assignScores();
-  // indexPoap();
-  // assignPoap();
+  // await indexPoap();
+  // await assignPoap();
 };
 
 indexLogs();
