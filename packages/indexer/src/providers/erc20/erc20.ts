@@ -13,14 +13,11 @@ const indexTransferEvents = async (
   client: PublicClient<HttpTransport, Chain>,
   contract: ContractWithDeployedBlock,
 ) => {
-  const label = `find latest event ${contract.address}`;
+  const label = `find latest event ${contract.id}`;
   console.time(label);
-  const latestSyncedEvent = await prisma.eRC20TransferEvent2.findFirst({
-    select: {
+  const latestSyncedEvent = await prisma.eRC20TransferEvent2.aggregate({
+    _max: {
       blockNumber: true,
-    },
-    orderBy: {
-      blockNumber: 'desc',
     },
     where: {
       contractId: contract.id,
@@ -29,9 +26,7 @@ const indexTransferEvents = async (
 
   console.timeEnd(label);
 
-  const fromBlock = latestSyncedEvent
-    ? latestSyncedEvent.blockNumber
-    : BigInt(contract.deployedBlock);
+  const fromBlock = latestSyncedEvent._max.blockNumber || BigInt(contract.deployedBlock);
   console.log('fromBlock', fromBlock);
 
   const processTransfers = async (logs: GetFilterLogsReturnType) => {
@@ -61,10 +56,12 @@ const indexTransferEvents = async (
 
     const label = `createMany ${contract.address}`;
     console.time(label);
-    await prisma.eRC20TransferEvent2.createMany({
-      data,
-      skipDuplicates: true,
-    });
+    if (data.length > 0) {
+      await prisma.eRC20TransferEvent2.createMany({
+        data,
+        skipDuplicates: true,
+      });
+    }
 
     console.timeEnd(label);
   };
