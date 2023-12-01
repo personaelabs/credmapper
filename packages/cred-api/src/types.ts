@@ -36,8 +36,8 @@ export interface IndexedCast {
 }
 
 export interface GetFeedQueryParams {
-  channelId?: string;
-  cred?: string;
+  channelId: string;
+  cred: boolean;
   offset?: string;
 }
 
@@ -88,4 +88,50 @@ export interface GetUserResponse {
       activeStatus: string;
     };
   };
+}
+
+export interface FeedQueryResult {
+  fid: bigint;
+  displayName: string | null;
+  username: string | null;
+  pfp: string | null;
+  text: string;
+  timestamp: Date;
+  likesCount: bigint;
+  recastsCount: bigint;
+  repliesCount: bigint;
+  cred: string[];
+  mentions: string[];
+  embeds: CastEmbed[];
+  channel_score: bigint;
+  parentUrl: string | null;
+}
+
+export interface Channel {
+  name: string;
+  parent_url: string;
+  channel_id: string;
+  image: string;
+}
+
+export interface Cred {
+  name: string;
+  image: string;
+}
+
+export interface FeedItem {
+  fid: string;
+  displayName: string;
+  username: string;
+  pfp: string;
+  text: string;
+  timestamp: Date;
+  likesCount: string;
+  recastsCount: string;
+  repliesCount: string;
+  cred: Cred[];
+  mentions: string[];
+  embeds: CastEmbed[];
+  parentUrl: string | null;
+  channel: Channel;
 }
