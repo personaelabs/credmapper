@@ -10,7 +10,6 @@ const indexLogs = async () => {
   // await assignERC721s();
   //  await indexAccounts(connectedAddresses);
   //  await assignAccountInfo();
-  // Log emory usage
 
   await indexERC20();
   // await assignERC20s();

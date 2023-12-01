@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { createPublicClient, http, Chain } from 'viem';
 import * as chains from 'viem/chains';
 
-export const NUM_MAINNET_CLIENTS = 5;
+export const NUM_MAINNET_CLIENTS = 10;
 
 export const getClient = (chain: Chain, clientIndex: number = 0) => {
   let apiKey;
@@ -24,6 +24,21 @@ export const getClient = (chain: Chain, clientIndex: number = 0) => {
           break;
         case 4:
           apiKey = process.env.ALCHEMY_API_KEY_4;
+          break;
+        case 5:
+          apiKey = process.env.ALCHEMY_API_KEY_5;
+          break;
+        case 6:
+          apiKey = process.env.ALCHEMY_API_KEY_6;
+          break;
+        case 7:
+          apiKey = process.env.ALCHEMY_API_KEY_7;
+          break;
+        case 8:
+          apiKey = process.env.ALCHEMY_API_KEY_8;
+          break;
+        case 9:
+          apiKey = process.env.ALCHEMY_API_KEY_9;
           break;
         default:
           throw new Error('Invalid client index');
