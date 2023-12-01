@@ -13,29 +13,20 @@ export const indexCasts = async () => {
 
   await batchRun(
     async (casts) => {
-      const parsedCasts = (
-        await Promise.all(
-          casts.map(async (cast) => {
-            try {
-              return {
-                fid: cast.fid,
-                text: cast.text,
-                timestamp: cast.timestamp,
-                hash: `0x${cast.hash.toString('hex')}`,
-                embeds: cast.embeds.map((embed) => embed.url),
-                mentions: cast.mentions,
-                mentionsPositions: cast.mentions_positions,
-                parentUrl: cast.parent_url,
-                likesCount: cast.likes_count,
-                recastsCount: cast.recasts_count,
-              } as IndexedCast;
-            } catch (e) {
-              console.log(e);
-              return null;
-            }
-          }),
-        )
-      ).filter((cast) => cast) as IndexedCast[];
+      const parsedCasts = casts.map((cast) => {
+        return {
+          fid: cast.fid,
+          text: cast.text,
+          timestamp: cast.timestamp,
+          hash: `0x${cast.hash.toString('hex')}`,
+          embeds: cast.embeds.map((embed) => embed.url),
+          mentions: cast.mentions,
+          mentionsPositions: cast.mentions_positions,
+          parentUrl: cast.parent_url,
+          likesCount: cast.likes_count,
+          recastsCount: cast.recasts_count,
+        } as IndexedCast;
+      });
 
       for (const cast of parsedCasts) {
         const data = {
@@ -73,6 +64,6 @@ export const indexCasts = async () => {
     },
     casts,
     'Index casts',
-    20,
+    50,
   );
 };

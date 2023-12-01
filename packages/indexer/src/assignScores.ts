@@ -22,7 +22,7 @@ export const assignScores = async () => {
       const elapsedHours = Math.round(
         (new Date().getTime() - new Date(c.timestamp).getTime()) / 1000 / 60 / 60,
       );
-      const ageScore = 24 - elapsedHours;
+      const ageScore = -elapsedHours * 3;
       score += ageScore;
 
       return {
