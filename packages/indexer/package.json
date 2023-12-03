@@ -19,5 +19,9 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2",
     "viem": "^1.19.5"
+  },
+  "devDependencies": {
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0"
   }
 }

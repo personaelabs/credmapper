@@ -1,28 +1,25 @@
-import { indexTxCount } from './providers/txCount';
-import assignOver100Txs from './cred/assignOver100Txs';
-import { indexCasts } from './casts';
-import { assignScores } from './assignScores';
-import assignERC20s from './cred/assignERC20';
+import { indexCasts, indexReactions } from './casts';
 import assignERC721s from './cred/assignERC721s';
 import { indexUsers } from './providers/farcaster';
 import { indexERC721 } from './providers/erc721/erc721';
 
 const indexCred = async () => {
+  console.time('indexUsers');
   await indexUsers();
-
-  // await indexTxCount();
-  // await assignOver100Txs();
+  console.timeEnd('indexUsers');
 
   await indexERC721();
   await assignERC721s();
 
-  // await indexAccounts(connectedAddresses);
-  // await assignAccountInfo();
-
   // Index casts
+  console.time('indexCasts');
   await indexCasts();
+  console.timeEnd('indexCasts');
 
-  await assignScores();
+  // Index reactions
+  console.time('indexReactions');
+  await indexReactions();
+  console.timeEnd('indexReactions');
 };
 
 indexCred();

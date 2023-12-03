@@ -151,8 +151,9 @@ model PackagedCast {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  user User   @relation(fields: [fid], references: [fid])
-  fid  BigInt
+  user     User       @relation(fields: [fid], references: [fid])
+  fid      BigInt
+  Reaction Reaction[]
 }
 
 model UserCred {
@@ -161,4 +162,16 @@ model UserCred {
   user User   @relation(fields: [fid], references: [fid])
 
   @@id([fid, cred])
+}
+
+model Reaction {
+  fid          BigInt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now()) @updatedAt
+  castId       String
+  reactionType Int          @db.SmallInt
+  timestamp    DateTime
+  targetCast   PackagedCast @relation(fields: [castId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fid, castId, reactionType])
 }

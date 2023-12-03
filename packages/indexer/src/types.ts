@@ -75,6 +75,15 @@ export interface CastsQueryResult {
   recasts_count: bigint;
 }
 
+export type NewCastsQueryResult = Omit<Omit<CastsQueryResult, 'likes_count'>, 'recasts_count'>;
+
+export interface NewReactionsQueryResult {
+  target_hash: Buffer;
+  reaction_type: number;
+  timestamp: Date;
+  fid: bigint;
+}
+
 export interface UsernameQueryResult {
   fid: bigint;
   value: string;

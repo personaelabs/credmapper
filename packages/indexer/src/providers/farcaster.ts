@@ -6,6 +6,8 @@ import {
   GetCastsOptions,
   CastsQueryResult,
   UsersQueryResult,
+  NewCastsQueryResult,
+  NewReactionsQueryResult,
 } from '../types';
 import { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../prisma';
@@ -20,24 +22,65 @@ export const fcReplicaClient = new PrismaClient({
   },
 });
 
-const userDataTypes = [
-  {
-    type: 'pfp',
-    key: 1,
-  },
-  {
-    type: 'displayName',
-    key: 2,
-  },
-  {
-    type: 'bio',
-    key: 3,
-  },
-  {
-    type: 'username',
-    key: 6,
-  },
-];
+const getUsernames = async (updatedAfter: Date): Promise<UserDataQueryResult[]> => {
+  const usernames = await fcReplicaClient.$queryRaw<UserDataQueryResult[]>`
+    SELECT
+      "value",
+      "fid"
+    FROM
+      "user_data"
+    WHERE
+      "type" = 6
+      AND "updated_at" > ${updatedAfter}
+  `;
+
+  return usernames;
+};
+
+const getDisplayNames = async (updatedAfter: Date): Promise<UserDataQueryResult[]> => {
+  const displayNames = await fcReplicaClient.$queryRaw<UserDataQueryResult[]>`
+    SELECT
+      "value",
+      "fid"
+    FROM
+      "user_data"
+    WHERE
+      "type" = 2
+      AND "updated_at" > ${updatedAfter}
+  `;
+
+  return displayNames;
+};
+
+const getPfps = async (updatedAfter: Date): Promise<UserDataQueryResult[]> => {
+  const pfps = await fcReplicaClient.$queryRaw<UserDataQueryResult[]>`
+    SELECT
+      "value",
+      "fid"
+    FROM
+      "user_data"
+    WHERE
+      "type" = 1
+      AND "updated_at" > ${updatedAfter}
+  `;
+
+  return pfps;
+};
+
+const getBios = async (updatedAfter: Date): Promise<UserDataQueryResult[]> => {
+  const bios = await fcReplicaClient.$queryRaw<UserDataQueryResult[]>`
+    SELECT
+      "value",
+      "fid"
+    FROM
+      "user_data"
+    WHERE
+      "type" = 3
+      AND "updated_at" > ${updatedAfter}
+  `;
+
+  return bios;
+};
 
 // Get all users from the Farcaster replica database
 const getUsers = async (): Promise<UserProfile[]> => {
@@ -99,29 +142,103 @@ const getUsers = async (): Promise<UserProfile[]> => {
 };
 
 export const indexUsers = async () => {
-  console.time('Get user profiles');
-  const userProfiles = await getUsers();
-  console.timeEnd('Get user profiles');
+  const tableIsEmpty = (await prisma.user.findFirst()) == null;
+  if (tableIsEmpty) {
+    const userProfiles = await getUsers();
+    await prisma.user.createMany({
+      data: userProfiles,
+    });
+  } else {
+    const latestUpdatedAt = (
+      await prisma.user.aggregate({
+        _max: {
+          updatedAt: true,
+        },
+      })
+    )._max.updatedAt!;
 
-  // Create users
-  await batchRun(
-    async (batch) => {
-      await Promise.all(
-        batch.map((userProfile) => {
-          return prisma.user.upsert({
-            where: {
-              fid: userProfile.fid,
-            },
-            update: userProfile,
-            create: userProfile,
-          });
-        }),
-      );
-    },
-    userProfiles,
-    'User',
-    50,
-  );
+    const buffer = 1000 * 60 * 2; // 2 minute
+    const updatedAfter = new Date(new Date(latestUpdatedAt).getTime() - buffer);
+
+    const pfps = await getPfps(updatedAfter);
+    const displayNames = await getDisplayNames(updatedAfter);
+    const bios = await getBios(updatedAfter);
+    const usernames = await getUsernames(updatedAfter);
+
+    const updatedFids = [
+      ...new Set([
+        ...pfps.map((r) => r.fid),
+        ...displayNames.map((r) => r.fid),
+        ...bios.map((r) => r.fid),
+        ...usernames.map((r) => r.fid),
+      ]),
+    ];
+
+    for (const fid of updatedFids) {
+      console.time(`Update user ${fid}`);
+      const userProfile: Prisma.UserUpdateInput = {};
+
+      const pfp = pfps.find((r) => r.fid === fid);
+      if (pfp) {
+        userProfile.pfp = pfp.value;
+      }
+
+      const displayName = displayNames.find((r) => r.fid === fid);
+      if (displayName) {
+        userProfile.displayName = displayName.value;
+      }
+
+      const bio = bios.find((r) => r.fid === fid);
+      if (bio) {
+        userProfile.bio = bio.value;
+      }
+
+      const username = usernames.find((r) => r.fid === fid);
+      if (username) {
+        userProfile.username = username.value;
+      }
+
+      await prisma.user.upsert({
+        where: {
+          fid,
+        },
+        create: { fid, followersCount: 0, ...userProfile } as Prisma.UserCreateInput,
+        update: userProfile,
+      });
+      console.timeEnd(`Update user ${fid}`);
+    }
+  }
+};
+
+export const getNewCasts = async (fromDate: Date): Promise<NewCastsQueryResult[]> => {
+  const newCasts = await fcReplicaClient.$queryRaw<NewCastsQueryResult[]>`
+    SELECT
+      *
+    FROM
+      casts
+    WHERE
+      created_at >= ${fromDate}
+      AND deleted_at IS NULL
+  `;
+
+  return newCasts;
+};
+
+export const getNewReactions = async (fromDate: Date): Promise<NewReactionsQueryResult[]> => {
+  const newReactions = await fcReplicaClient.$queryRaw<NewReactionsQueryResult[]>`
+    SELECT
+    target_hash,
+    reaction_type,
+    fid,
+    "timestamp"
+    FROM
+      reactions
+    WHERE
+      created_at > ${fromDate} AND
+      deleted_at IS NULL
+  `;
+
+  return newReactions;
 };
 
 export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResult[]> => {
@@ -143,7 +260,6 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResu
           casts
         WHERE
           deleted_at IS NULL
-          AND "parent_hash" IS NULL
           AND "timestamp" > ${options.fromDate}
         ORDER BY
           "timestamp" DESC

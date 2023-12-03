@@ -7,3 +7,5 @@ CryptoKittiesPre2019.json
 
 optimum-surface*.json
 .DS_Store
+
+packages/indexer/src/scripts/*.csv
