@@ -131,7 +131,7 @@ export interface FeedItem {
   repliesCount: string;
   cred: Cred[];
   mentions: string[];
-  embeds: CastEmbed[];
+  embeds: string[];
   parentUrl: string | null;
   channel: Channel;
 }

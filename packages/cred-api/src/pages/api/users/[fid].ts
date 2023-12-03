@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const user = await getUser(req.query.fid as string);
-  const userCred = await prisma.userCred.findFirst({
+  const userCred = await prisma.userCred.findMany({
     where: {
       fid: Number(req.query.fid as string),
     },

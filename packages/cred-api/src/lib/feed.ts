@@ -7,6 +7,10 @@ import CRED_META from '../../credMeta';
 const PAGE_SIZE = 20;
 
 const toFeed = (casts: FeedQueryResult[] | PackagesSelectResult[]): FeedItem[] => {
+  if (casts.length === 0) {
+    return [];
+  }
+
   if ('user' in casts[0]) {
     return (casts as PackagesSelectResult[]).map((cast) => ({
       username: cast.user.username || '',
@@ -15,9 +19,7 @@ const toFeed = (casts: FeedQueryResult[] | PackagesSelectResult[]): FeedItem[] =
       fid: cast.fid.toString(),
       text: cast.text,
       timestamp: cast.timestamp,
-      embeds: cast.embeds.map((embed) => ({
-        url: embed,
-      })),
+      embeds: cast.embeds,
       cred: cast.user.UserCred.map((cred) => CRED_META.find((c) => c.id === cred.cred)).filter(
         (c) => c !== undefined,
       ) as Cred[],
@@ -36,7 +38,7 @@ const toFeed = (casts: FeedQueryResult[] | PackagesSelectResult[]): FeedItem[] =
       fid: cast.fid.toString(),
       text: cast.text,
       timestamp: cast.timestamp,
-      embeds: cast.embeds,
+      embeds: cast.embeds.map((embed) => embed.url),
       cred:
         (cast.cred
           ?.map((cred) => CRED_META.find((c) => c.id === cred))
