@@ -215,7 +215,18 @@ export const indexUsers = async () => {
 export const getNewCasts = async (fromDate: Date): Promise<NewCastsQueryResult[]> => {
   const newCasts = await fcReplicaClient.$queryRaw<NewCastsQueryResult[]>`
     SELECT
-      *
+      "id",
+      "timestamp",
+      "text",
+      "parent_fid",
+      "fid",
+      "parent_url",
+      "parent_hash",
+      "root_parent_hash",
+      "mentions",
+      "mentions_positions",
+      "embeds",
+      "hash"
     FROM
       casts
     WHERE
@@ -254,6 +265,8 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResu
           "parent_fid",
           "fid",
           "parent_url",
+          "parent_hash",
+          "root_parent_hash",
           "mentions",
           "mentions_positions",
           "embeds",
@@ -283,6 +296,8 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResu
           "parent_fid",
           "fid",
           "parent_url",
+          "parent_hash",
+          "root_parent_hash",
           "mentions",
           "mentions_positions",
           "embeds",

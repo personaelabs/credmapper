@@ -148,6 +148,7 @@ export const getChannelFeed = async (channelId: string, skip: number) => {
       LEFT JOIN "Reaction" ON "PackagedCast".id = "Reaction"."castId"
     WHERE
       "PackagedCast"."parentUrl" = ${parentUrl}
+      AND "parentHash" IS NULL
     GROUP BY
       "PackagedCast".id
     ),
@@ -190,7 +191,9 @@ export const getChannelFeed = async (channelId: string, skip: number) => {
       LEFT JOIN with_reactions ON with_reactions.id = "PackagedCast".id
     WHERE
       "PackagedCast"."parentUrl" = ${parentUrl}
-    LIMIT 100
+      AND "parentHash" IS NULL
+    OFFSET ${skip}
+    LIMIT ${PAGE_SIZE + 1}
     )
     SELECT
       *

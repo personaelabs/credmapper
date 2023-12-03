@@ -146,6 +146,8 @@ model PackagedCast {
   repliesCount      BigInt    @default(0)
   hash              String
   parentUrl         String?
+  parentHash        String?
+  rootParentHash    String?
   score             BigInt    @default(0)
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())

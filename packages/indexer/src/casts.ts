@@ -4,18 +4,6 @@ import { binarySearch } from './utils';
 
 const FROM_DATE = new Date('2023-11-15T00:00:00.000Z');
 
-const getLastIndexedAt = async (): Promise<Date | null> => {
-  const lastIndexedAt = (
-    await prisma.packagedCast.aggregate({
-      _max: {
-        timestamp: true,
-      },
-    })
-  )._max.timestamp;
-
-  return lastIndexedAt;
-};
-
 // Index all casts from a specified date
 export const indexCasts = async () => {
   const tableIsEmpty = (await prisma.packagedCast.count()) === 0;
@@ -34,13 +22,17 @@ export const indexCasts = async () => {
   if (tableIsEmpty) {
     console.log('Table is empty, indexing all casts');
 
-    const casts = await await getCasts({ fromDate: FROM_DATE });
+    const casts = await getCasts({ fromDate: FROM_DATE });
 
     await prisma.packagedCast.createMany({
       data: casts
         .filter((cast) => binarySearch(fids, cast.fid) !== -1)
         .map((cast) => {
           const hashHex = `0x${cast.hash.toString('hex')}`;
+          const parentHash = cast.parent_hash ? `0x${cast.parent_hash.toString('hex')}` : null;
+          const rootParentHash = cast.root_parent_hash
+            ? `0x${cast.root_parent_hash.toString('hex')}`
+            : null;
           return {
             fid: cast.fid,
             id: hashHex,
@@ -50,6 +42,8 @@ export const indexCasts = async () => {
             mentions: cast.mentions,
             mentionsPositions: cast.mentions_positions,
             parentUrl: cast.parent_url,
+            parentHash,
+            rootParentHash,
             hash: hashHex,
             likesCount: cast.likes_count,
             recastsCount: cast.recasts_count,
@@ -76,6 +70,11 @@ export const indexCasts = async () => {
         .filter((cast) => binarySearch(fids, cast.fid) !== -1)
         .map((cast) => {
           const hashHex = `0x${cast.hash.toString('hex')}`;
+          const parentHash = cast.parent_hash ? `0x${cast.parent_hash.toString('hex')}` : null;
+          const rootParentHash = cast.root_parent_hash
+            ? `0x${cast.root_parent_hash.toString('hex')}`
+            : null;
+
           return {
             fid: cast.fid,
             id: hashHex,
@@ -85,6 +84,8 @@ export const indexCasts = async () => {
             mentions: cast.mentions,
             mentionsPositions: cast.mentions_positions,
             parentUrl: cast.parent_url,
+            parentHash,
+            rootParentHash,
             hash: hashHex,
             likesCount: 0,
             recastsCount: 0,

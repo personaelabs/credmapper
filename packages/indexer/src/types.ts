@@ -66,6 +66,8 @@ export interface CastsQueryResult {
   text: string;
   hash: Buffer;
   parent_fid: bigint | null;
+  parent_hash: Buffer | null;
+  root_parent_hash: Buffer | null;
   fid: bigint;
   parent_url: string | null;
   mentions: bigint[];
