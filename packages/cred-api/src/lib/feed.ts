@@ -113,7 +113,11 @@ const CHANNEL_CRED: {
 } = {
   nouns: ['Nouns_owner'],
   ethereum: ['Devcon 5_owner'],
-  superrare: ['SuperRare Artist Badge (2021)_owner'],
+  superrare: [
+    'SuperRare Artist Badge (2021)_owner',
+    'SuperRare Collector Badge (2021)_owner',
+    'SuperRare OG Member Badge_owner',
+  ],
 };
 
 export const getChannelFeed = async (channelId: string, skip: number) => {
@@ -122,72 +126,76 @@ export const getChannelFeed = async (channelId: string, skip: number) => {
   const parentUrl = channel.parent_url;
 
   const casts = await prisma.$queryRaw<FeedQueryResult[]>`
-    WITH user_cred AS (
+    WITH with_reactions AS (
       SELECT
-        fid,
-        ARRAY_AGG(cred) AS cred
+        "PackagedCast".id,
+        count(
+          CASE WHEN "reactionType" = 1 THEN
+            1
+          END) AS "likesCount",
+        count(
+          CASE WHEN "reactionType" = 2 THEN
+            1
+          END) AS "recastsCount",
+        count(
+          CASE WHEN "reactionType" = 3 THEN
+            1
+          END) AS "repliesCount"
       FROM
-        "UserCred"
-      GROUP BY
-        fid
+        "PackagedCast"
+      LEFT JOIN "Reaction" ON "PackagedCast".id = "Reaction"."castId"
+    WHERE
+      "PackagedCast"."parentUrl" = ${parentUrl}
+    GROUP BY
+      "PackagedCast".id
     ),
     users_with_cred AS (
       SELECT
-        "User".fid,
-        "User"."displayName",
-        "User".username,
-        "User".pfp,
-        "user_cred".cred
+        "User".*,
+        ARRAY_AGG(cred) AS cred
       FROM
         "User"
-      LEFT JOIN user_cred ON user_cred.fid = "User".fid
+      LEFT JOIN "UserCred" ON "User".fid = "UserCred".fid
+    GROUP BY
+      "User".fid
     ),
-    with_scores AS (
+    feed AS (
       SELECT
-        users_with_cred.*,
-        text,
-        score,
-        "parentUrl",
-        "timestamp",
-        "likesCount",
-        "recastsCount",
-        "repliesCount",
-        "mentions",
-        "embeds",
-        score + (
+        "PackagedCast".fid,
+        "PackagedCast".text,
+        "PackagedCast"."timestamp",
+        "PackagedCast"."mentions",
+        "PackagedCast"."embeds",
+        "PackagedCast"."parentUrl",
+        users_with_cred."pfp",
+        users_with_cred."displayName",
+        users_with_cred."username",
+        users_with_cred."fid",
+        users_with_cred."cred",
+        with_reactions."likesCount",
+        with_reactions."recastsCount",
+        with_reactions."repliesCount",
+        (EXTRACT(EPOCH FROM now() - "PackagedCast"."timestamp")) / (60 * 60 * 24),
+        (with_reactions."likesCount" + with_reactions."recastsCount" * 2 - 10 * EXTRACT(EPOCH FROM now() - "PackagedCast"."timestamp")) / (60 * 60 * 24) + (
           CASE WHEN users_with_cred.cred @> ARRAY [${Prisma.join(channelCred)}] THEN
-            200
+            25
           ELSE
             0
-          END) AS channel_score
+          END) AS channel_score -- Score of the cast
       FROM
         "PackagedCast"
-        LEFT JOIN users_with_cred ON "PackagedCast".fid = users_with_cred.fid
-      WHERE
-        "parentUrl" = ${parentUrl}
-      ORDER BY
-        channel_score DESC
-      OFFSET ${skip}
-      LIMIT ${PAGE_SIZE + 1}
+      LEFT JOIN users_with_cred ON users_with_cred.fid = "PackagedCast".fid
+      LEFT JOIN with_reactions ON with_reactions.id = "PackagedCast".id
+    WHERE
+      "PackagedCast"."parentUrl" = ${parentUrl}
+    LIMIT 100
     )
     SELECT
-      "fid",
-      "pfp",
-      "username",
-      "displayName",
-      "text",
-      "cred",
-      "likesCount",
-      "repliesCount",
-      "recastsCount",
-      "mentions",
-      "embeds",
-      "timestamp",
-      "channel_score",
-      "parentUrl"
+      *
     FROM
-      with_scores
-    ORDER BY "channel_score" DESC
+      feed
+    ORDER BY
+  	channel_score DESC
   `;
 
   const feed = toFeed(casts.slice(0, PAGE_SIZE));

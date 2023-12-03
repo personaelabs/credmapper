@@ -174,6 +174,8 @@ export const indexUsers = async () => {
       ]),
     ];
 
+    console.log(`Updating ${updatedFids.length} users`);
+
     for (const fid of updatedFids) {
       console.time(`Update user ${fid}`);
       const userProfile: Prisma.UserUpdateInput = {};

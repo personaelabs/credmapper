@@ -2,6 +2,8 @@ import { indexCasts, indexReactions } from './casts';
 import assignERC721s from './cred/assignERC721s';
 import { indexUsers } from './providers/farcaster';
 import { indexERC721 } from './providers/erc721/erc721';
+import { indexPoap } from './providers/poap/poap';
+import assignPoap from './cred/assignPoap';
 
 const indexCred = async () => {
   console.time('indexUsers');
@@ -10,6 +12,9 @@ const indexCred = async () => {
 
   await indexERC721();
   await assignERC721s();
+
+  // await indexPoap();
+  await assignPoap();
 
   // Index casts
   console.time('indexCasts');
