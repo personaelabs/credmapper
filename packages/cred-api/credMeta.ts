@@ -48,6 +48,24 @@ const credMeta = [
       //'https://downloads.intercomcdn.com/i/o/459919625/19f9536bc26f9bd56fdf0d02/2021_XCOPY_SR_BADGE_+%281%29.gif',
       'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20OG.png',
   },
+  {
+    id: 'Milady_owner',
+    name: 'Milady Owner',
+    image:
+      'https://i.seadn.io/gae/a_frplnavZA9g4vN3SexO5rrtaBX_cBTaJYcgrPtwQIqPhzgzUendQxiwUdr51CGPE2QyPEa1DHnkW1wLrHAv5DgfC3BP-CWpFq6BA?auto=format&dpr=1&w=384',
+  },
+  {
+    id: 'Crypto Punks_owner',
+    name: 'Crypto Punks Owner',
+    image:
+      'https://i.seadn.io/gae/BdxvLseXcfl57BiuQcQYdJ64v-aI8din7WPk0Pgo3qQFhAUH-B6i-dCqqc_mCkRIzULmwzwecnohLhrcH8A9mpWIZqA7ygc52Sr81hE?auto=format&dpr=1&w=384',
+  },
+  {
+    id: 'Pudgy Penguins_owner',
+    name: 'Pudgy Penguins Owner',
+    image:
+      'https://i.seadn.io/gae/yNi-XdGxsgQCPpqSio4o31ygAV6wURdIdInWRcFIl46UjUQ1eV7BEndGe8L661OoG-clRi7EgInLX4LPu9Jfw4fq0bnVYHqg7RFi?auto=format&dpr=1&w=128',
+  },
 ];
 
 export default credMeta;
