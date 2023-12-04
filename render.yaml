@@ -5,7 +5,6 @@ services:
     branch: main
     region: oregon
     rootDir: ./
-    schedule: '0 0 * * *'
     buildCommand: pnpm i && pnpm -F db migrate:prod
     startCommand: pnpm -F indexer indexOneOff
     buildFilter:
