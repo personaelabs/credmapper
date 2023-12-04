@@ -1,4 +1,25 @@
 services:
+  - type: worker
+    name: credmapper-worker
+    runtime: node
+    branch: main
+    region: oregon
+    rootDir: ./
+    schedule: '0 0 * * *'
+    buildCommand: pnpm i && pnpm -F db migrate:prod
+    startCommand: pnpm -F indexer indexOneOff
+    buildFilter:
+      paths:
+        - packages/indexer/**
+        - packages/db/**
+      ignoredPaths:
+        - packages/cred-api/**
+        - packages/coindata/**
+        - packages/app/**
+    envVars:
+      - fromGroup: credmapper
+      - key: NODE_VERSION
+        value: 18.14.0
   - type: cron
     name: credmapper
     plan: pro

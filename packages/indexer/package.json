@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "indexLogs": "pnpm ts-node ./src/indexLogs.ts",
+    "indexOneOff": "pnpm ts-node ./src/indexOneOff.ts",
     "indexCred": "pnpm ts-node ./src/indexCred.ts",
     "check": "tsc --noEmit"
   },

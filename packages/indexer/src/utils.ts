@@ -87,11 +87,10 @@ export const runInParallel = async <T>(
     const client = getClient(chains.mainnet, clientIndex);
     promises.push(fn(client, params[i]));
 
-    if (promises.length === NUM_MAINNET_CLIENTS) {
+    if (promises.length === NUM_MAINNET_CLIENTS || i === params.length - 1) {
+      console.log(`Running ${promises.length} operations in parallel`);
       await Promise.all(promises);
       promises = [];
     }
   }
-
-  await Promise.all(promises);
 };
