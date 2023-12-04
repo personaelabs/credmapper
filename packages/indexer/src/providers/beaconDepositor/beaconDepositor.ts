@@ -21,22 +21,20 @@ export const indexBeaconDepositors = async () => {
     const data = (
       await Promise.all(
         logs.map(async (log) => {
-          // @ts-ignore
-          const index = log.args.index;
-
           const tx = await client.getTransaction({
             hash: log.transactionHash,
           });
 
-          // Get the address of the depositor
+          const transactionIndex = log.transactionIndex;
+          const logIndex = log.logIndex;
 
           if (tx) {
             return {
-              index: index.toString(),
               address: tx.from.toLowerCase() as Hex,
-              transactionHash: log.transactionHash,
               blockNumber: log.blockNumber,
               value: tx.value.toString(),
+              transactionIndex,
+              logIndex,
             } as BeaconDepositEvent;
           } else {
             return false;
@@ -51,16 +49,16 @@ export const indexBeaconDepositors = async () => {
     });
   };
 
-  const latestEvent = await prisma.beaconDepositEvent.findFirst({
-    orderBy: {
-      blockNumber: 'desc',
+  const latestEvent = await prisma.beaconDepositEvent.aggregate({
+    _max: {
+      blockNumber: true,
     },
   });
 
   await processLogs(
     client,
     DEPOSIT_EVENT,
-    latestEvent?.blockNumber || FIRST_DEPOSIT_AT,
+    latestEvent?._max.blockNumber || FIRST_DEPOSIT_AT,
     processor,
     BEACON_CONTRACT,
     BigInt(100),

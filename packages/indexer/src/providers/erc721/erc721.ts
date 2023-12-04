@@ -6,28 +6,24 @@ import * as chains from 'viem/chains';
 import CONTRACT_EVENTS from './contracts';
 import { TRANSFER_EVENT } from './abi/abi';
 import { ContractWithDeployedBlock } from '../../types';
-import { getClient } from '../ethRpc';
+import { NUM_MAINNET_CLIENTS, getClient } from '../ethRpc';
+import { runInParallel } from '../../utils';
 
 // Sync `Transfer` events from ERC721 contracts
 const indexTransferEvents = async (
   client: PublicClient<HttpTransport, Chain>,
   contract: ContractWithDeployedBlock,
 ) => {
-  const latestSyncedEvent = await prisma.transferEvent.findFirst({
-    select: {
+  const latestSyncedEvent = await prisma.transferEvent.aggregate({
+    _max: {
       blockNumber: true,
-    },
-    orderBy: {
-      blockNumber: 'desc',
     },
     where: {
       contractId: contract.id,
     },
   });
 
-  const fromBlock = latestSyncedEvent
-    ? latestSyncedEvent.blockNumber
-    : BigInt(contract.deployedBlock);
+  const fromBlock = latestSyncedEvent?._max.blockNumber || BigInt(contract.deployedBlock);
 
   const processTransfers = async (logs: GetFilterLogsReturnType) => {
     const data = (
@@ -40,6 +36,9 @@ const indexTransferEvents = async (
           // @ts-ignore
           const tokenId = log.args.tokenId;
 
+          const transactionIndex = log.transactionIndex;
+          const logIndex = log.logIndex;
+
           if (from && to && tokenId != null) {
             return {
               contractId: contract.id,
@@ -47,7 +46,8 @@ const indexTransferEvents = async (
               to: to.toLowerCase() as Hex,
               tokenId: tokenId,
               blockNumber: log.blockNumber,
-              transactionHash: log.transactionHash,
+              transactionIndex: transactionIndex,
+              logIndex: logIndex,
             };
           } else {
             return false;
@@ -66,10 +66,10 @@ const indexTransferEvents = async (
 };
 
 export const indexERC721 = async () => {
-  const chain = chains.mainnet;
-  const client = getClient(chain);
-  // Index all transfer events
-  for (const contract of CONTRACT_EVENTS) {
-    await indexTransferEvents(client, contract);
-  }
+  await runInParallel(
+    async (client: PublicClient<HttpTransport, Chain>, contract: ContractWithDeployedBlock) => {
+      await indexTransferEvents(client, contract);
+    },
+    CONTRACT_EVENTS,
+  );
 };

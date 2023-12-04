@@ -1,5 +1,6 @@
-import { Hex } from 'viem';
-import * as _chains from 'viem/chains';
+import { Hex, HttpTransport, PublicClient } from 'viem';
+import * as chains from 'viem/chains';
+import { NUM_MAINNET_CLIENTS, getClient } from './providers/ethRpc';
 
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -73,4 +74,24 @@ export const binarySearch = (arr: bigint[], target: bigint): number => {
   }
 
   return -1; // Target not found
+};
+
+export const runInParallel = async <T>(
+  fn: (client: PublicClient<HttpTransport, chains.Chain>, params: T) => Promise<void>,
+  params: T[],
+) => {
+  let promises = [];
+
+  for (let i = 0; i < params.length; i++) {
+    const clientIndex = i % NUM_MAINNET_CLIENTS;
+    const client = getClient(chains.mainnet, clientIndex);
+    promises.push(fn(client, params[i]));
+
+    if (promises.length === NUM_MAINNET_CLIENTS) {
+      await Promise.all(promises);
+      promises = [];
+    }
+  }
+
+  await Promise.all(promises);
 };

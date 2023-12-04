@@ -18,19 +18,40 @@ model SyncInfo {
 }
 
 model TransferEvent {
-  transactionHash String @id
-  blockNumber     BigInt
-  from            String
-  to              String
-  tokenId         BigInt
-  contractId      Int    @default(0)
+  blockNumber      BigInt
+  from             String
+  to               String
+  tokenId          BigInt
+  contractId       Int    @default(0)
+  transactionIndex Int
+  logIndex         Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  @@unique([blockNumber, transactionIndex])
   @@index([to])
   @@index([from])
   @@index([contractId])
+}
+
+model ERC20TransferEvent {
+  transactionIndex Int
+  logIndex         Int
+  blockNumber      BigInt
+  from             String
+  to               String
+  value            String
+  contractId       Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([blockNumber, transactionIndex])
+  @@index([to])
+  @@index([from])
+  @@index([contractId])
+  @@index([blockNumber])
 }
 
 model ERC20TransferEvent2 {
@@ -87,25 +108,30 @@ model PoapEventTokenEvent {
 }
 
 model BeaconDepositEvent {
-  transactionHash String @id
-  value           String
-  blockNumber     BigInt
-  index           String
-  address         String
+  transactionIndex Int
+  logIndex         Int
+  value            String
+  blockNumber      BigInt
+  address          String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([blockNumber, transactionIndex])
 }
 
-model AddressInfo {
+model Address {
   address             String
   network             String
-  firstTx             String
-  firstTxTimestamp    DateTime
+  firstTx             String?
+  firstTxTimestamp    DateTime?
   txCount             Int
   contractDeployments String[]
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @default(now()) @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now()) @updatedAt
+
+  User    User?   @relation(fields: [userFid], references: [fid])
+  userFid BigInt?
 
   @@id([address, network])
 }
@@ -119,6 +145,7 @@ model User {
   followersCount Int
   PackagedCast   PackagedCast[]
   UserCred       UserCred[]
+  addresses      Address[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
