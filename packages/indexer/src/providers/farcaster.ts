@@ -141,7 +141,7 @@ const getUsers = async (): Promise<UserProfile[]> => {
   }));
 };
 
-export const indexUsers = async () => {
+export const syncUsers = async () => {
   const tableIsEmpty = (await prisma.user.findFirst()) == null;
   if (tableIsEmpty) {
     const userProfiles = await getUsers();

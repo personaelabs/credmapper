@@ -5,7 +5,7 @@ import { TxListResponse } from '../types';
 import * as chains from 'viem/chains';
 import { getAllAddresses } from './farcaster';
 
-export const indexAccounts = async () => {
+export const syncAccounts = async () => {
   const connectedAddresses = await getAllAddresses();
   const addresses = connectedAddresses.map((account) => account.verified_addresses).flat();
 

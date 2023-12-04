@@ -5,7 +5,7 @@ import { binarySearch } from './utils';
 const FROM_DATE = new Date('2023-11-15T00:00:00.000Z');
 
 // Index all casts from a specified date
-export const indexCasts = async () => {
+export const syncCasts = async () => {
   const tableIsEmpty = (await prisma.packagedCast.count()) === 0;
 
   const fids = (
@@ -96,7 +96,7 @@ export const indexCasts = async () => {
   }
 };
 
-export const indexReactions = async () => {
+export const syncReactions = async () => {
   const latestReactionTimestamp = (
     await prisma.reaction.aggregate({
       _max: {

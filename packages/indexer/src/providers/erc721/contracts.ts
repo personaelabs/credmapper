@@ -6,24 +6,28 @@ const CONTRACTS: ContractWithDeployedBlock[] = [
     name: 'Nouns',
     address: '0x9c8ff314c9bc7f6e59a9d9225fb22946427edc03',
     deployedBlock: BigInt(12985438),
+    indexed: true,
   },
   {
     id: 301,
     name: 'CryptoPunks',
     address: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
     deployedBlock: BigInt(3914495),
+    indexed: false,
   },
   {
     id: 302,
     name: 'Milady',
     address: '0x5af0d9827e0c53e4799bb226655a1de152a425a5',
     deployedBlock: BigInt(13090020),
+    indexed: true,
   },
   {
     id: 303,
     name: 'Pudgy Penguins',
     address: '0xbd3531da5cf5857e7cfaa92426877b022e612cf8',
     deployedBlock: BigInt(12876179),
+    indexed: true,
   },
 ];
 

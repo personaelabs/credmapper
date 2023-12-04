@@ -190,4 +190,5 @@ export interface ContractWithDeployedBlock {
   name?: string;
   address: Hex;
   deployedBlock: bigint;
+  indexed?: boolean;
 }

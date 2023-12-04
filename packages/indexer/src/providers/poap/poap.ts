@@ -6,6 +6,7 @@ import * as chains from 'viem/chains';
 import { NUM_MAINNET_CLIENTS, getClient } from '../ethRpc';
 import { TRANSFER_EVENT, EVENT_TOKEN_EVENT } from './abi/abi';
 import events from './events';
+import { runInParallel } from '../../utils';
 
 const POAP_DEPLOYED_BLOCK = 7844214;
 const POAP_CONTRACT = {
@@ -15,7 +16,7 @@ const POAP_CONTRACT = {
 };
 
 const indexEventTransferEvents = async (client: PublicClient<HttpTransport, Chain>) => {
-  const operationId = 'PoapTransferEvent';
+  const operationId = 'PoapTransferEvent'; // TODO: Move this out to a separate file
 
   const latestSyncedBlock = await prisma.syncInfo.findFirst({
     select: {
@@ -153,18 +154,16 @@ const indexEventTokenEvents = async (
 };
 
 export const indexPoap = async () => {
-  const chain = chains.mainnet;
-  let promises = [];
+  const eventIds = events.map((event) => event.id);
+  await runInParallel(indexEventTokenEvents, eventIds);
+  await runInParallel(indexEventTransferEvents, eventIds);
+};
 
-  // Index all transfer events
-  for (const event of events) {
-    const clientIndex = event.id % NUM_MAINNET_CLIENTS;
-    const client = getClient(chain, clientIndex);
-    promises.push(indexEventTokenEvents(client, event.id));
-  }
+export const syncPoap = async () => {
+  const indexedEventIds = events.filter((event) => event.indexed).map((event) => event.id);
+  console.log(`Syncing ${indexedEventIds.length} Poap events`);
+  await runInParallel(indexEventTokenEvents, indexedEventIds);
 
-  const client1 = getClient(chain, 1);
-  promises.push(indexEventTransferEvents(client1));
-
-  await Promise.all(promises);
+  const client = getClient(chains.mainnet);
+  await indexEventTransferEvents(client);
 };

@@ -73,3 +73,17 @@ export const indexERC721 = async () => {
     CONTRACT_EVENTS,
   );
 };
+
+export const syncERC721 = async () => {
+  // In sync mode, we only process the contracts that are already indexed.
+  const INDEXED_CONTRACTS = CONTRACT_EVENTS.filter((contract) => contract.indexed);
+
+  console.log(`Syncing ${INDEXED_CONTRACTS.length} ERC721 contracts`);
+
+  await runInParallel(
+    async (client: PublicClient<HttpTransport, Chain>, contract: ContractWithDeployedBlock) => {
+      await indexTransferEvents(client, contract);
+    },
+    INDEXED_CONTRACTS,
+  );
+};

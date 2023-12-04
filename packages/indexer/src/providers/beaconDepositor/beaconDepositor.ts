@@ -14,7 +14,6 @@ const BEACON_CONTRACT: ContractWithDeployedBlock = {
   deployedBlock: FIRST_DEPOSIT_AT,
 };
 
-// Sync `Transfer` events from ERC721 contracts
 export const indexBeaconDepositors = async () => {
   const client = getClient(chains.mainnet);
   const processor = async (logs: GetFilterLogsReturnType) => {
@@ -63,4 +62,23 @@ export const indexBeaconDepositors = async () => {
     BEACON_CONTRACT,
     BigInt(100),
   );
+};
+
+export const syncBeaconDepositors = async () => {
+  const latestEvent = await prisma.beaconDepositEvent.aggregate({
+    _max: {
+      blockNumber: true,
+    },
+  });
+
+  const latestBlock = await getClient(chains.mainnet).getBlockNumber();
+
+  const syncedBlock = latestEvent?._max.blockNumber || FIRST_DEPOSIT_AT;
+  if (syncedBlock > latestBlock - BigInt(10000)) {
+    await indexBeaconDepositors();
+  } else {
+    console.log(
+      `Skipping beacon depositors sync. Latest block: ${latestBlock} Synced block: ${syncedBlock}`,
+    );
+  }
 };
