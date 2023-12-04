@@ -19,7 +19,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fid: Number(req.query.fid as string),
       },
     })
-  ).map((cred) => CRED_META.find((meta) => meta.id === cred.cred));
+  )
+    .map((cred) => CRED_META.find((meta) => meta.id === cred.cred))
+    .filter((cred) => cred);
 
   return res.status(200).json({ ...user.result.user, cred });
 }

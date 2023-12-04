@@ -29,6 +29,7 @@ const toFeed = (casts: FeedQueryResult[] | PackagesSelectResult[]): FeedItem[] =
       recastsCount: cast.recastsCount.toString(),
       repliesCount: cast.repliesCount.toString(),
       channel: channels.find((c) => c.parent_url === cast.parentUrl)!,
+      firstTxTimestamp: cast.user.addresses[0]?.firstTxTimestamp || null,
     }));
   } else {
     return (casts as FeedQueryResult[]).map((cast) => ({
@@ -49,6 +50,7 @@ const toFeed = (casts: FeedQueryResult[] | PackagesSelectResult[]): FeedItem[] =
       recastsCount: cast.recastsCount.toString(),
       repliesCount: cast.repliesCount.toString(),
       channel: channels.find((c) => c.parent_url === cast.parentUrl)!,
+      firstTxTimestamp: null,
     }));
   }
 };
@@ -72,6 +74,11 @@ const PackagesSelect = {
       UserCred: {
         select: {
           cred: true,
+        },
+      },
+      addresses: {
+        select: {
+          firstTxTimestamp: true,
         },
       },
     },

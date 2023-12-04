@@ -134,4 +134,5 @@ export interface FeedItem {
   embeds: string[];
   parentUrl: string | null;
   channel: Channel;
+  firstTxTimestamp: Date | null;
 }
