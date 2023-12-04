@@ -68,5 +68,5 @@ databases:
   - name: credmapper-db
     databaseName: credmapper
     region: oregon
-    plan: pro
+    plan: pro plus
     postgresMajorVersion: 15
