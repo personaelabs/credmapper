@@ -1,66 +1,74 @@
-import { Hex } from 'viem';
 import etherscan from './etherscan';
 import { batchRun, sleep } from '../utils';
 import prisma from '../prisma';
 import { TxListResponse } from '../types';
-import { AddressInfo } from '@prisma/client';
 import * as chains from 'viem/chains';
+import { getAllAddresses } from './farcaster';
 
-const indexChains = [chains.mainnet, chains.optimism];
-export const indexAccounts = async (addresses: Hex[]) => {
-  await Promise.all(
-    indexChains.map(async (chain) => {
-      const etherscanClient = etherscan(chain);
-      await batchRun(
-        async (batch) => {
-          const addressesInfo = (
-            await Promise.all(
-              batch.map(async (address) => {
-                const result = await etherscanClient.get<TxListResponse>('', {
-                  params: {
-                    module: 'account',
-                    action: 'txlist',
-                    startBlock: 0,
-                    address: address,
-                    sort: 'asc',
-                    page: 1,
-                  },
-                });
+export const indexAccounts = async () => {
+  const connectedAddresses = await getAllAddresses();
+  const addresses = connectedAddresses.map((account) => account.verified_addresses).flat();
 
-                if (result.data.result.length > 0) {
-                  const outgoingTxs = result.data.result.filter(
-                    (tx) => tx.from.toLowerCase() === address,
-                  );
-                  const txCount = outgoingTxs.length;
-                  const firstTx = result.data.result[0];
-                  const contractDeployments = result.data.result.filter((tx: any) => tx.to === '');
+  const indexedAddresses = (
+    await prisma.address.findMany({
+      select: {
+        address: true,
+      },
+    })
+  ).map((address) => address.address);
 
-                  return {
-                    network: chain.name,
-                    address: address.toLowerCase(),
-                    txCount,
-                    firstTx: firstTx.hash,
-                    firstTxTimestamp: new Date(parseInt(firstTx.timeStamp) * 1000),
-                    contractDeployments: contractDeployments.map((tx) => tx.hash),
-                  };
-                }
+  const addressesToIndex = [
+    ...new Set(addresses.filter((address) => !indexedAddresses.includes(address))),
+  ];
 
-                return false;
-              }),
-            )
-          ).filter((data) => data) as AddressInfo[];
+  const etherscanClient = etherscan(chains.mainnet);
+  await batchRun(
+    async (batch) => {
+      await Promise.all(
+        batch.map(async (address) => {
+          try {
+            const result = await etherscanClient.get<TxListResponse>('', {
+              params: {
+                module: 'account',
+                action: 'txlist',
+                startBlock: 0,
+                address: address,
+                sort: 'asc',
+                page: 1,
+              },
+            });
 
-          await prisma.addressInfo.createMany({
-            data: addressesInfo,
-            skipDuplicates: true,
-          });
+            const fid = connectedAddresses.find((account) =>
+              account.verified_addresses.includes(address),
+            )?.fid;
 
-          await sleep(1500);
-        },
-        addresses,
-        'accountInfo',
-        4,
+            if (fid) {
+              const txs = result.data.result;
+              const firstTx = txs.length > 0 ? txs[0] : null;
+              // const contractDeployments = result.data.result.filter((tx: any) => tx.to === '');
+
+              await prisma.address.create({
+                data: {
+                  network: chains.mainnet.name,
+                  address: address.toLowerCase(),
+                  txCount: 0,
+                  firstTx: firstTx?.hash,
+                  firstTxTimestamp: firstTx ? new Date(parseInt(firstTx.timeStamp) * 1000) : null,
+                  contractDeployments: [],
+                  userFid: fid,
+                },
+              });
+            }
+          } catch (err) {
+            console.log(err);
+          }
+        }),
       );
-    }),
+
+      await sleep(1500);
+    },
+    addressesToIndex,
+    'accountInfo',
+    4,
   );
 };
