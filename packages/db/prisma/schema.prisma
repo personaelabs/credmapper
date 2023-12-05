@@ -204,3 +204,15 @@ model Reaction {
 
   @@unique([fid, castId, reactionType])
 }
+
+model Whale {
+  contractId    Int
+  address       String
+  durationStart DateTime
+  durationEnd   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([contractId, address, durationStart, durationEnd])
+}

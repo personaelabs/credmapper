@@ -192,3 +192,24 @@ export interface ContractWithDeployedBlock {
   deployedBlock: bigint;
   indexed?: boolean;
 }
+
+export interface QueryTransfersResult {
+  total_value_in: number;
+  total_value_out: number;
+  address: string;
+  holding: bigint;
+}
+
+export interface MarketCapDuration {
+  startDate: Date;
+  endDate: Date;
+}
+
+export interface IndexedCoin {
+  id: string;
+  contract: string;
+  deployedBlock: bigint;
+  marketCapDurations: MarketCapDuration[];
+  dbId: number;
+  totalSupply?: string;
+}

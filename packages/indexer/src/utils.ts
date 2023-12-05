@@ -1,6 +1,7 @@
 import { Hex, HttpTransport, PublicClient } from 'viem';
 import * as chains from 'viem/chains';
 import { NUM_MAINNET_CLIENTS, getClient } from './providers/ethRpc';
+import etherscan from './providers/etherscan';
 
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -93,4 +94,17 @@ export const runInParallel = async <T>(
       promises = [];
     }
   }
+};
+
+export const findBlockNumberByTimestamp = async (targetDate: Date): Promise<bigint> => {
+  const { data } = await etherscan(chains.mainnet).get('', {
+    params: {
+      module: 'block',
+      action: 'getblocknobytime',
+      timestamp: Math.round(targetDate.getTime() / 1000),
+      closest: 'before',
+    },
+  });
+
+  return BigInt(data.result as string);
 };
