@@ -1,7 +1,14 @@
-import { Chain, GetFilterLogsReturnType, Hex, PublicClient, Transport } from 'viem';
+import {
+  AbiEncodingLengthMismatchError,
+  Chain,
+  GetFilterLogsReturnType,
+  Hex,
+  PublicClient,
+  Transport,
+} from 'viem';
 import { AbiEvent } from 'abitype';
 import { ContractWithDeployedBlock } from '../types';
-import { sleep, trimAddress } from '../utils';
+import { trimAddress } from '../utils';
 
 // Sync logs for a specific event.
 // Use `syncContractLogs` to sync logs for a specific contract.
@@ -18,10 +25,12 @@ export const processLogs = async <T extends Transport, C extends Chain>(
   ) => Promise<void>,
   contract: ContractWithDeployedBlock,
   batchSize: bigint = BigInt(2000),
+  accumulateLogs?: number,
 ) => {
   // Get the latest block number
   const latestBlock = await client.getBlockNumber();
 
+  let batch = [];
   for (let batchFrom = fromBlock; batchFrom < latestBlock; batchFrom += batchSize) {
     try {
       const startTime = Date.now();
@@ -35,10 +44,26 @@ export const processLogs = async <T extends Transport, C extends Chain>(
         strict: true,
       });
 
-      await processor(logs, {
-        fromBlock: batchFrom,
-        toBlock,
-      });
+      if (accumulateLogs) {
+        batch.push(...logs);
+      }
+
+      if (accumulateLogs) {
+        if (batch.length >= accumulateLogs) {
+          console.log(`Processing ${batch.length} logs`);
+          await processor(batch, {
+            fromBlock: batchFrom,
+            toBlock,
+          });
+
+          batch = [];
+        }
+      } else {
+        await processor(logs, {
+          fromBlock: batchFrom,
+          toBlock,
+        });
+      }
 
       const endTime = Date.now();
       const timeTaken = (endTime - startTime) / 1000;
