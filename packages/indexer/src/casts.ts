@@ -1,8 +1,108 @@
 import prisma from './prisma';
-import { getCasts, getNewCasts, getNewReactions } from './providers/farcaster';
+import {
+  getNewReactions,
+  getCasts,
+  getNewRootCasts,
+  getNewChildrenCasts,
+  getUsers,
+} from './providers/farcaster';
+import { CastsQueryResult } from './types';
 import { binarySearch } from './utils';
 
 const FROM_DATE = new Date('2023-11-15T00:00:00.000Z');
+
+const toPackagedCast = (cast: CastsQueryResult) => {
+  const hashHex = `0x${cast.hash.toString('hex')}`;
+  const parentHash = cast.parent_hash ? `0x${cast.parent_hash.toString('hex')}` : null;
+  const rootParentHash = cast.root_parent_hash
+    ? `0x${cast.root_parent_hash.toString('hex')}`
+    : null;
+  return {
+    fid: cast.fid,
+    id: hashHex,
+    text: cast.text,
+    timestamp: cast.timestamp,
+    embeds: cast.embeds.map((embed) => embed.url),
+    mentions: cast.mentions,
+    mentionsPositions: cast.mentions_positions,
+    parentUrl: cast.parent_url,
+    parentHash,
+    rootParentHash,
+    hash: hashHex,
+  };
+};
+
+const syncCastChildren = async (casts: CastsQueryResult[], fids: bigint[], parentHash: Buffer) => {
+  const children = casts.filter((cast) => cast.parent_hash?.equals(parentHash));
+
+  const childrenToIndex = children.filter((cast) => binarySearch(fids, cast.fid) !== -1);
+  console.log('childrenToIndex.length', childrenToIndex.length);
+
+  if (childrenToIndex.length > 0) {
+    await prisma.packagedCast.createMany({
+      data: childrenToIndex.map(toPackagedCast),
+      skipDuplicates: true,
+    });
+
+    for (const child of childrenToIndex) {
+      await syncCastChildren(casts, fids, child.hash);
+    }
+  }
+};
+
+const syncAllCasts = async () => {
+  const fids = (
+    await prisma.user.findMany({
+      select: {
+        fid: true,
+      },
+      orderBy: {
+        fid: 'asc',
+      },
+    })
+  ).map((user) => user.fid);
+
+  const casts = await getCasts({ fromDate: FROM_DATE });
+
+  const rootCasts = casts.filter((cast) => cast.parent_hash === null);
+
+  await prisma.packagedCast.createMany({
+    data: rootCasts.filter((cast) => binarySearch(fids, cast.fid) !== -1).map(toPackagedCast),
+    skipDuplicates: true,
+  });
+
+  for (let i = 0; i < rootCasts.length; i += 1) {
+    console.log(`Indexing root cast ${i + 1}/${rootCasts.length}`);
+    const cast = rootCasts[i];
+    await syncCastChildren(casts, fids, cast.hash);
+  }
+};
+
+export const resyncAll = async () => {
+  // Get all FIDs that aren't indexed yet
+  const users = await getUsers();
+  const indexedFids = (
+    await prisma.user.findMany({
+      select: {
+        fid: true,
+      },
+      orderBy: {
+        fid: 'asc',
+      },
+    })
+  ).map((user) => user.fid);
+
+  const usersToIndex = users.filter((user) => binarySearch(indexedFids, user.fid) === -1);
+
+  console.log(`Indexing ${usersToIndex.length} out of sync users`);
+
+  await prisma.user.createMany({
+    data: usersToIndex,
+    skipDuplicates: true,
+  });
+
+  await syncAllCasts();
+};
 
 // Index all casts from a specified date
 export const syncCasts = async () => {
@@ -22,35 +122,7 @@ export const syncCasts = async () => {
   if (tableIsEmpty) {
     console.log('Table is empty, indexing all casts');
 
-    const casts = await getCasts({ fromDate: FROM_DATE });
-
-    await prisma.packagedCast.createMany({
-      data: casts
-        .filter((cast) => binarySearch(fids, cast.fid) !== -1)
-        .map((cast) => {
-          const hashHex = `0x${cast.hash.toString('hex')}`;
-          const parentHash = cast.parent_hash ? `0x${cast.parent_hash.toString('hex')}` : null;
-          const rootParentHash = cast.root_parent_hash
-            ? `0x${cast.root_parent_hash.toString('hex')}`
-            : null;
-          return {
-            fid: cast.fid,
-            id: hashHex,
-            text: cast.text,
-            timestamp: cast.timestamp,
-            embeds: cast.embeds.map((embed) => embed.url),
-            mentions: cast.mentions,
-            mentionsPositions: cast.mentions_positions,
-            parentUrl: cast.parent_url,
-            parentHash,
-            rootParentHash,
-            hash: hashHex,
-            likesCount: cast.likes_count,
-            recastsCount: cast.recasts_count,
-          };
-        }),
-      skipDuplicates: true,
-    });
+    await syncAllCasts();
   } else {
     const latestCastTimestamp = (
       await prisma.packagedCast.aggregate({
@@ -61,36 +133,35 @@ export const syncCasts = async () => {
     )._max.timestamp;
 
     console.log('latestCastTimestamp', latestCastTimestamp);
-    const casts = await getNewCasts(latestCastTimestamp || FROM_DATE);
+    const rootCasts = await getNewRootCasts(latestCastTimestamp || FROM_DATE);
 
-    console.log(`Indexing ${casts.length} new casts`);
+    console.log(`Indexing ${rootCasts.length} new root casts`);
 
     await prisma.packagedCast.createMany({
-      data: casts
-        .filter((cast) => binarySearch(fids, cast.fid) !== -1)
-        .map((cast) => {
-          const hashHex = `0x${cast.hash.toString('hex')}`;
-          const parentHash = cast.parent_hash ? `0x${cast.parent_hash.toString('hex')}` : null;
-          const rootParentHash = cast.root_parent_hash
-            ? `0x${cast.root_parent_hash.toString('hex')}`
-            : null;
+      data: rootCasts.filter((cast) => binarySearch(fids, cast.fid) !== -1).map(toPackagedCast),
+      skipDuplicates: true,
+    });
 
-          return {
-            fid: cast.fid,
-            id: hashHex,
-            text: cast.text,
-            timestamp: cast.timestamp,
-            embeds: cast.embeds.map((embed) => embed.url),
-            mentions: cast.mentions,
-            mentionsPositions: cast.mentions_positions,
-            parentUrl: cast.parent_url,
-            parentHash,
-            rootParentHash,
-            hash: hashHex,
-            likesCount: 0,
-            recastsCount: 0,
-          };
-        }),
+    const indexedCastIds = (
+      await prisma.packagedCast.findMany({
+        select: {
+          id: true,
+        },
+      })
+    ).map((cast) => cast.id);
+
+    const childrenCasts = await getNewChildrenCasts(latestCastTimestamp || FROM_DATE);
+
+    console.log(`Indexing ${childrenCasts.length} new children casts`);
+
+    await prisma.packagedCast.createMany({
+      data: childrenCasts
+        .filter((cast) =>
+          indexedCastIds.some(
+            (indexedCastId) => `0x${cast.hash.toString('hex')}` === indexedCastId,
+          ),
+        )
+        .map(toPackagedCast),
       skipDuplicates: true,
     });
   }

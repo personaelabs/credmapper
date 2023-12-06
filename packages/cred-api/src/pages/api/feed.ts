@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GetFeedQueryParams, FeedQueryResult } from '@/src/types';
-import { getChannelFeed, getCredFeed } from '@/src/lib/feed';
+import { GetFeedQueryParams, FeedQueryResult, Feed } from '@/src/types';
+import { getCredFeed } from '@/src/lib/feed';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -11,13 +11,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const query = req.query as unknown as GetFeedQueryParams;
   const offset = Number(query.offset || 0);
 
-  const channelId = query.channelId;
+  const feed = Number(query.feed);
 
-  if (query.cred) {
+  if (feed === Feed.Spotlight) {
     const { feed, hasNextPage } = await getCredFeed(offset);
     res.status(200).json({ feed, hasNextPage });
-  } else if (query.channelId) {
-    const { feed, hasNextPage } = await getChannelFeed(channelId, offset);
+  } else if (feed === Feed.Following) {
+    const { feed, hasNextPage } = await getCredFeed(offset);
     res.status(200).json({ feed, hasNextPage });
   } else {
     res.status(400).json({ error: 'Invalid query' });

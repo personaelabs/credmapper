@@ -73,8 +73,6 @@ export interface CastsQueryResult {
   mentions: bigint[];
   mentions_positions: number[];
   embeds: CastEmbed[];
-  likes_count: bigint;
-  recasts_count: bigint;
 }
 
 export type NewCastsQueryResult = Omit<Omit<CastsQueryResult, 'likes_count'>, 'recasts_count'>;

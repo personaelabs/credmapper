@@ -1,4 +1,10 @@
+import { Reaction } from '@prisma/client';
 import { Hex } from 'viem';
+
+export enum Feed {
+  Spotlight = 1,
+  Following = 2,
+}
 
 export interface CastEmbed {
   url: string;
@@ -36,8 +42,7 @@ export interface IndexedCast {
 }
 
 export interface GetFeedQueryParams {
-  channelId: string;
-  cred: boolean;
+  feed: Feed;
   offset?: string;
 }
 
@@ -69,28 +74,16 @@ export interface GetSignerResponse {
 export interface GetUserResponse {
   result: {
     user: {
-      fid: number;
-      username: string;
-      custodyAddress: string;
-      displayName: string;
-      pfp: {
-        url: string;
-      };
-      profile: {
-        bio: {
-          text: string;
-          mentionedProfiles: string[];
-        };
-      };
+      // There are other fields as well,
+      // but we only care about these two fields for now
       followerCount: number;
       followingCount: number;
-      verifications: string[];
-      activeStatus: string;
     };
   };
 }
 
 export interface FeedQueryResult {
+  id: string;
   fid: bigint;
   displayName: string | null;
   username: string | null;
@@ -120,19 +113,19 @@ export interface Cred {
 }
 
 export interface FeedItem {
+  id: string;
   fid: string;
+  parentHash: string | null;
   displayName: string;
   username: string;
   pfp: string;
   text: string;
   timestamp: Date;
-  likesCount: string;
-  recastsCount: string;
-  repliesCount: string;
   cred: Cred[];
   mentions: string[];
   embeds: string[];
   parentUrl: string | null;
   channel: Channel;
-  firstTxTimestamp: Date | null;
+  reactions: Pick<Reaction, 'reactionType'>[];
+  children: Omit<FeedItem, 'children'>[];
 }

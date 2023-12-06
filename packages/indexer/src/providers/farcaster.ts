@@ -83,7 +83,7 @@ const getBios = async (updatedAfter: Date): Promise<UserDataQueryResult[]> => {
 };
 
 // Get all users from the Farcaster replica database
-const getUsers = async (): Promise<UserProfile[]> => {
+export const getUsers = async (): Promise<UserProfile[]> => {
   const users = await fcReplicaClient.$queryRaw<UsersQueryResult[]>`
     WITH pfps AS (
       SELECT
@@ -212,8 +212,34 @@ export const syncUsers = async () => {
   }
 };
 
-export const getNewCasts = async (fromDate: Date): Promise<NewCastsQueryResult[]> => {
-  const newCasts = await fcReplicaClient.$queryRaw<NewCastsQueryResult[]>`
+export const getNewRootCasts = async (fromDate: Date): Promise<CastsQueryResult[]> => {
+  const newCasts = await fcReplicaClient.$queryRaw<CastsQueryResult[]>`
+    SELECT
+      "id",
+      "timestamp",
+      "text",
+      "parent_fid",
+      "fid",
+      "parent_url",
+      "parent_hash",
+      "root_parent_hash",
+      "mentions",
+      "mentions_positions",
+      "embeds",
+      "hash"
+    FROM
+      casts
+    WHERE
+      created_at >= ${fromDate}
+      AND parent_hash IS NULL
+      AND deleted_at IS NULL
+  `;
+
+  return newCasts;
+};
+
+export const getNewChildrenCasts = async (fromDate: Date): Promise<CastsQueryResult[]> => {
+  const newCasts = await fcReplicaClient.$queryRaw<CastsQueryResult[]>`
     SELECT
       "id",
       "timestamp",
@@ -232,6 +258,7 @@ export const getNewCasts = async (fromDate: Date): Promise<NewCastsQueryResult[]
     WHERE
       created_at >= ${fromDate}
       AND deleted_at IS NULL
+      AND parent_hash is not null
   `;
 
   return newCasts;
@@ -254,61 +281,30 @@ export const getNewReactions = async (fromDate: Date): Promise<NewReactionsQuery
   return newReactions;
 };
 
+export const getCastChildren = async (parentHash: Buffer) => {
+  const castChildren = await fcReplicaClient.$queryRaw<CastsQueryResult[]>`
+    SELECT
+    fid, text, timestamp, parent_url, mentions, mentions_positions, embeds, parent_hash, root_parent_hash, hash
+    FROM
+      casts
+    WHERE
+      deleted_at IS NULL
+      AND parent_hash = ${parentHash}
+  `;
+
+  return castChildren;
+};
+
 export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResult[]> => {
-  console.time('Get casts');
   const castsQueryResult = await fcReplicaClient.$queryRaw<CastsQueryResult[]>`
-      WITH filtered_casts AS (
-        SELECT
-          "id",
-          "timestamp",
-          "text",
-          "parent_fid",
-          "fid",
-          "parent_url",
-          "parent_hash",
-          "root_parent_hash",
-          "mentions",
-          "mentions_positions",
-          "embeds",
-          "hash"
-        FROM
-          casts
-        WHERE
-          deleted_at IS NULL
-          AND "timestamp" > ${options.fromDate}
-        ORDER BY
-          "timestamp" DESC
-      ),
-      with_likes AS (
-        SELECT
-          filtered_casts.id,
-          count(CASE WHEN reaction_type = 1 THEN 1 END) AS likes_count,
-          count(CASE WHEN reaction_type = 2 THEN 1 END) AS recasts_count
-        FROM
-          filtered_casts
-          INNER JOIN reactions ON filtered_casts.hash = reactions.target_hash
-        WHERE reactions.reaction_type in (1, 2) AND reactions.deleted_at IS NULL
-        GROUP by filtered_casts.id
-      )
       SELECT
-          "timestamp",
-          "text",
-          "parent_fid",
-          "fid",
-          "parent_url",
-          "parent_hash",
-          "root_parent_hash",
-          "mentions",
-          "mentions_positions",
-          "embeds",
-          "filtered_casts"."hash" as "hash",
-          "with_likes"."likes_count",
-          "with_likes"."recasts_count"
+    fid, text, timestamp, parent_url, mentions, mentions_positions, embeds, parent_hash, root_parent_hash, hash
       FROM
-        filtered_casts
-        INNER JOIN with_likes ON filtered_casts.id = with_likes.id
+        casts
+      WHERE
+        deleted_at IS NULL
+        AND "timestamp" > ${options.fromDate}
       `;
-  console.timeEnd('Get casts');
 
   return castsQueryResult;
 };

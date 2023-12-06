@@ -9,19 +9,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const user = await getUser(req.query.fid as string);
-  const cred = (
-    await prisma.userCred.findMany({
-      select: {
-        cred: true,
-      },
-      where: {
-        fid: Number(req.query.fid as string),
-      },
-    })
-  )
-    .map((cred) => CRED_META.find((meta) => meta.id === cred.cred))
-    .filter((cred) => cred);
+  const fid = BigInt(req.query.fid as string);
 
-  return res.status(200).json({ ...user.result.user, cred });
+  const user = await prisma.user.findUnique({
+    select: {
+      fid: true,
+      displayName: true,
+      username: true,
+      pfp: true,
+      bio: true,
+      UserCred: {
+        select: {
+          cred: true,
+        },
+      },
+      addresses: {
+        select: {
+          address: true,
+        },
+      },
+    },
+    where: {
+      fid,
+    },
+  });
+
+  const cred = user?.UserCred.map((cred) => CRED_META.find((meta) => meta.id === cred.cred)).filter(
+    (cred) => cred,
+  );
+
+  const addresses = user?.addresses.map((address) => address.address);
+
+  const {
+    result: {
+      user: { followerCount, followingCount },
+    },
+  } = await getUser(fid.toString());
+
+  return res.status(200).json({ ...user, followerCount, followingCount, cred, addresses });
 }

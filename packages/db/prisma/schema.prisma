@@ -183,6 +183,9 @@ model PackagedCast {
   user     User       @relation(fields: [fid], references: [fid])
   fid      BigInt
   Reaction Reaction[]
+
+  parent   PackagedCast?  @relation("ParentCast", fields: [parentHash], references: [id])
+  children PackagedCast[] @relation("ParentCast")
 }
 
 model UserCred {
