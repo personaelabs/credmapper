@@ -28,7 +28,7 @@ services:
     branch: main
     schedule: '0 0 * * *'
     buildCommand: pnpm i && pnpm -F db migrate:prod
-    startCommand: pnpm -F indexer indexLogs
+    startCommand: pnpm -F indexer indexOneOff
     buildFilter:
       paths:
         - packages/indexer/**

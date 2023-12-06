@@ -2,6 +2,7 @@ import { Hex, HttpTransport, PublicClient } from 'viem';
 import * as chains from 'viem/chains';
 import { NUM_MAINNET_CLIENTS, getClient } from './providers/ethRpc';
 import etherscan from './providers/etherscan';
+import chalk from 'chalk';
 
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -81,18 +82,62 @@ export const runInParallel = async <T>(
   fn: (client: PublicClient<HttpTransport, chains.Chain>, params: T) => Promise<void>,
   params: T[],
 ) => {
-  let promises = [];
+  let queuedParams = params.map((param, i) => {
+    return {
+      param,
+      index: i,
+    };
+  });
+  const activePromises = [];
+  let activeClients: number[] = [];
 
-  for (let i = 0; i < params.length; i++) {
-    const clientIndex = i % NUM_MAINNET_CLIENTS;
-    const client = getClient(chains.mainnet, clientIndex);
-    promises.push(fn(client, params[i]));
+  const allClientIds = new Array(NUM_MAINNET_CLIENTS).fill(0).map((_, i) => i);
 
-    if (promises.length === NUM_MAINNET_CLIENTS || i === params.length - 1) {
-      console.log(`Running ${promises.length} operations in parallel`);
-      await Promise.all(promises);
-      promises = [];
+  const getAvailableClientId = (): number => {
+    const nonActiveClients = allClientIds.filter((clientId) => !activeClients.includes(clientId));
+    return nonActiveClients[0];
+  };
+
+  while (true) {
+    while (queuedParams.length > 0 && activeClients.length < NUM_MAINNET_CLIENTS) {
+      const clientId = getAvailableClientId();
+      const client = getClient(chains.mainnet, clientId);
+
+      const queuedParam = queuedParams[0];
+      const param = queuedParam.param;
+      const promise = fn(client, param)
+        .then(() => {
+          activeClients = activeClients.filter((id) => id !== clientId);
+          console.log(
+            chalk.green(
+              `Completed job ${queuedParam.index}/${params.length} with client ${clientId}`,
+            ),
+          );
+        })
+        .catch((err) => {
+          console.error(err);
+          activeClients = activeClients.filter((id) => id !== clientId);
+          console.log(
+            chalk.red(`Failed job ${queuedParam.index}/${params.length} with client ${clientId}`),
+          );
+        });
+
+      activePromises.push(promise);
+      activeClients.push(clientId);
+
+      console.log(
+        chalk.blue(`Started job ${queuedParam.index}/${params.length} with client ${clientId}`),
+      );
+
+      queuedParams.shift();
     }
+
+    if (queuedParams.length === 0 && activePromises.length === 0) {
+      console.log(chalk.green('All jobs completed'));
+      break;
+    }
+
+    await sleep(3000); // Wait 3 seconds
   }
 };
 
