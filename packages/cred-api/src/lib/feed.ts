@@ -128,3 +128,29 @@ export const getCredFeed = async (skip: number) => {
 export const getFollowingFeed = async (skip: number, username: string) => {
   // TODO
 };
+
+export const getUserFeed = async (fid: bigint, skip: number) => {
+  console.log({ fid });
+  const casts = await prisma.packagedCast.findMany({
+    select: CastWithChildrenSelect,
+    where: {
+      parentHash: null,
+      user: {
+        fid,
+      },
+    },
+    skip,
+    take: PAGE_SIZE + 1,
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+
+  const hasNextPage = casts.length > PAGE_SIZE;
+  const feed = casts.slice(0, PAGE_SIZE).map(castWithChildrenToFeedItem);
+
+  return {
+    feed,
+    hasNextPage,
+  };
+};

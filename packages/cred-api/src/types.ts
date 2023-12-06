@@ -46,6 +46,11 @@ export interface GetFeedQueryParams {
   offset?: string;
 }
 
+export interface GetUserFeedQueryParams {
+  fid: string;
+  offset?: string;
+}
+
 export interface GetAccountQueryParams {
   custodyAddress: string;
 }
