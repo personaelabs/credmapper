@@ -21,7 +21,7 @@ services:
         value: 18.14.0
   - type: cron
     name: credmapper
-    plan: pro
+    plan: pro plus
     env: node
     region: oregon
     rootDir: ./
