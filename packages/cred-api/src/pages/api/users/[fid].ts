@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getUser } from '@/src/lib/neynar';
 import prisma from '@/src/prisma';
 import CRED_META from '@/credMeta';
+import { CastSelect, castToFeedItem } from '@/src/lib/feed';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -28,6 +29,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           address: true,
         },
       },
+      PackagedCast: {
+        select: CastSelect,
+      },
     },
     where: {
       fid,
@@ -40,11 +44,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const addresses = user?.addresses.map((address) => address.address);
 
+  const casts = user?.PackagedCast.map(castToFeedItem);
+
   const {
     result: {
       user: { followerCount, followingCount },
     },
   } = await getUser(fid.toString());
 
-  return res.status(200).json({ ...user, followerCount, followingCount, cred, addresses });
+  return res.status(200).json({ ...user, casts, followerCount, followingCount, cred, addresses });
 }
