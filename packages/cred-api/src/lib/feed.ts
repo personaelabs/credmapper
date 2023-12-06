@@ -26,6 +26,7 @@ export const castToFeedItem = (
     mentions: cast.mentions.map((mention) => mention.toString()),
     channel: channels.find((c) => c.parent_url === cast.parentUrl)!,
     reactions: cast.Reaction,
+    repliesCount: cast._count.children,
   };
 };
 
@@ -66,6 +67,11 @@ export const CastSelect = {
           firstTxTimestamp: true,
         },
       },
+    },
+  },
+  _count: {
+    select: {
+      children: true,
     },
   },
 };

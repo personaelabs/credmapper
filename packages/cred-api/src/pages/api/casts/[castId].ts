@@ -30,14 +30,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const castAsFeedItem = castToFeedItem(cast);
 
-  const children = await prisma.packagedCast.findMany({
-    select: CastSelect,
-    where: {
-      parentHash: castId,
-    },
-  });
-
-  const childrenAsFeedItems = children.map(castToFeedItem);
+  const childrenAsFeedItems = cast.children
+    .map(castToFeedItem)
+    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
   return res.status(200).json({ cast: castAsFeedItem, children: childrenAsFeedItems });
 }

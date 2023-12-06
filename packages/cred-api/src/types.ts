@@ -127,5 +127,6 @@ export interface FeedItem {
   parentUrl: string | null;
   channel: Channel;
   reactions: Pick<Reaction, 'reactionType'>[];
+  repliesCount: number;
   children: Omit<FeedItem, 'children'>[];
 }
