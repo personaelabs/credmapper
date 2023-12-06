@@ -1,0 +1,1 @@
+curl https://tg-bot-nu-seven.vercel.app/api/feed?feed=1

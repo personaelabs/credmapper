@@ -1,24 +1,19 @@
 services:
-  - type: worker
-    name: credmapper-worker
+  - type: cron
+    name: warmup-cred-api
     runtime: node
     branch: main
     region: oregon
     rootDir: ./
-    buildCommand: pnpm i && pnpm -F db migrate:prod
-    startCommand: pnpm -F indexer indexOneOff
+    schedule: '* * * * *'
+    startCommand: sh ./packages/cred-api/scripts/warmup.sh
     buildFilter:
       paths:
-        - packages/indexer/**
-        - packages/db/**
+        - packages/cred-api/scripts/**
       ignoredPaths:
-        - packages/cred-api/**
         - packages/coindata/**
-        - packages/app/**
-    envVars:
-      - fromGroup: credmapper
-      - key: NODE_VERSION
-        value: 18.14.0
+        - packages/cred-api/**
+        - packages/indexer/**
   - type: cron
     name: credmapper
     plan: pro plus
