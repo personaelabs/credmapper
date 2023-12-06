@@ -219,3 +219,10 @@ model Whale {
 
   @@id([contractId, address, durationStart, durationEnd])
 }
+
+model NotificationToken {
+  token String @id
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
