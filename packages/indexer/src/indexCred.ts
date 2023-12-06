@@ -34,7 +34,7 @@ const indexCred = async () => {
   console.timeEnd('syncReactions');
 
   console.time('syncBeaconDepositors');
-  await syncBeaconDepositors();
+  // await syncBeaconDepositors();
   // await assignBeaconDepositors();
   console.timeEnd('syncBeaconDepositors');
 };
