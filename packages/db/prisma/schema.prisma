@@ -121,14 +121,12 @@ model BeaconDepositEvent {
 }
 
 model Address {
-  address             String
-  network             String
-  firstTx             String?
-  firstTxTimestamp    DateTime?
-  txCount             Int
-  contractDeployments String[]
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @default(now()) @updatedAt
+  address          String
+  network          String
+  firstTx          String?
+  firstTxTimestamp DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
 
   User    User?   @relation(fields: [userFid], references: [fid])
   userFid BigInt?
@@ -193,6 +191,9 @@ model UserCred {
   fid  BigInt
   user User   @relation(fields: [fid], references: [fid])
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@id([fid, cred])
 }
 
@@ -206,18 +207,6 @@ model Reaction {
   targetCast   PackagedCast @relation(fields: [castId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([fid, castId, reactionType])
-}
-
-model Whale {
-  contractId    Int
-  address       String
-  durationStart DateTime
-  durationEnd   DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@id([contractId, address, durationStart, durationEnd])
 }
 
 model NotificationToken {

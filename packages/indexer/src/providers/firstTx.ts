@@ -47,16 +47,13 @@ export const syncFirstTxs = async () => {
             if (fid) {
               const txs = result.data.result;
               const firstTx = txs.length > 0 ? txs[0] : null;
-              // const contractDeployments = result.data.result.filter((tx: any) => tx.to === '');
 
               await prisma.address.create({
                 data: {
                   network: chains.mainnet.name,
                   address: address.toLowerCase(),
-                  txCount: 0,
                   firstTx: firstTx?.hash,
                   firstTxTimestamp: firstTx ? new Date(parseInt(firstTx.timeStamp) * 1000) : null,
-                  contractDeployments: [],
                   userFid: fid,
                 },
               });
