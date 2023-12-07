@@ -88,7 +88,6 @@ export const runInParallel = async <T>(
       index: i,
     };
   });
-  const activePromises = [];
   let activeClients: number[] = [];
 
   const allClientIds = new Array(NUM_MAINNET_CLIENTS).fill(0).map((_, i) => i);
@@ -122,7 +121,6 @@ export const runInParallel = async <T>(
           );
         });
 
-      activePromises.push(promise);
       activeClients.push(clientId);
 
       console.log(
@@ -132,7 +130,7 @@ export const runInParallel = async <T>(
       queuedParams.shift();
     }
 
-    if (queuedParams.length === 0 && activePromises.length === 0) {
+    if (queuedParams.length === 0) {
       console.log(chalk.green('All jobs completed'));
       break;
     }
