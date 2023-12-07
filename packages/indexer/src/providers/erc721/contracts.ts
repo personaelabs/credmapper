@@ -15,7 +15,6 @@ const CONTRACTS: ContractWithDeployedBlock[] = [
     deployedBlock: BigInt(13090020),
     indexed: true,
   },
-  /*
   {
     id: 303,
     name: 'Pudgy Penguins',
@@ -23,12 +22,18 @@ const CONTRACTS: ContractWithDeployedBlock[] = [
     deployedBlock: BigInt(12876179),
     indexed: true,
   },
-  */
   {
     id: 304,
     name: 'Purple',
     address: '0xa45662638E9f3bbb7A6FeCb4B17853B7ba0F3a60',
     deployedBlock: BigInt(15826300),
+    indexed: true,
+  },
+  {
+    id: 305,
+    name: 'Azuki',
+    address: '0xed5af388653567af2f388e6224dc7c4b3241c544',
+    deployedBlock: BigInt(13975838),
     indexed: true,
   },
 ];

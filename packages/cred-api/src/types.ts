@@ -135,8 +135,9 @@ export type Cred =
   | 'SuperRareOg'
   | 'Nouns'
   | 'Milady'
-  | 'Purple';
-
+  | 'Purple'
+  | 'PudgyPenguins'
+  | 'Azuki';
 export interface FeedItem {
   id: string;
   fid: string;

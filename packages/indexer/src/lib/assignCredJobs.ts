@@ -192,6 +192,20 @@ export const assignPurple = async () => {
   await assignCredToFcUsersByAddress('Purple', addresses);
 };
 
+export const assignPudgyPenguins = async () => {
+  const PUDGY_PENGUINS_CONTRACT_ID = 303;
+
+  const addresses = await getERC721Owners(PUDGY_PENGUINS_CONTRACT_ID);
+  await assignCredToFcUsersByAddress('PudgyPenguins', addresses);
+};
+
+export const assignAzuki = async () => {
+  const AZUKI_CONTRACT_ID = 305;
+
+  const addresses = await getERC721Owners(AZUKI_CONTRACT_ID);
+  await assignCredToFcUsersByAddress('Azuki', addresses);
+};
+
 /**
  **  Add more spotlight cred here
  */

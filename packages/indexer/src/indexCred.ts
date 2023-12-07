@@ -9,6 +9,8 @@ import {
   assignNouns,
   assignMilady,
   assignPurple,
+  assignAzuki,
+  assignPudgyPenguins,
 } from './lib/assignCredJobs';
 import { syncUsers } from './providers/farcaster';
 
@@ -22,6 +24,8 @@ const assignCredJobs = [
   assignNouns,
   assignMilady,
   assignPurple,
+  assignPudgyPenguins,
+  assignAzuki,
 ];
 
 // List of jobs that index data from Farcaster

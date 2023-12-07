@@ -215,4 +215,6 @@ export type Cred =
   | 'SuperRareOg'
   | 'Nouns'
   | 'Milady'
-  | 'Purple';
+  | 'Purple'
+  | 'PudgyPenguins'
+  | 'Azuki';
