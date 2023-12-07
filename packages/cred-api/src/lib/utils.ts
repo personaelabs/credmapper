@@ -1,3 +1,7 @@
+import { MentionedUser } from '../types';
+import { CastSelectResult } from './feed';
+import prisma from '../prisma';
+
 export const binarySearch = (arr: number[], target: number): number => {
   let left = 0;
   let right = arr.length - 1;
@@ -37,4 +41,32 @@ export const insertBytes = (
   newArray.set(originalArray.slice(insertPosition), insertPosition + newBytes.length);
 
   return newArray;
+};
+
+export const getMentionedUsersInCasts = async <C extends CastSelectResult>(
+  casts: C[],
+): Promise<MentionedUser[]> => {
+  const uniqueMentionedUserFids = new Set<bigint>();
+
+  for (const cast of casts) {
+    for (const mention of cast.mentions) {
+      uniqueMentionedUserFids.add(mention);
+    }
+  }
+
+  const mentionedUsers = (
+    await prisma.user.findMany({
+      select: {
+        fid: true,
+        username: true,
+      },
+      where: {
+        fid: {
+          in: [...uniqueMentionedUserFids],
+        },
+      },
+    })
+  ).filter((user) => user.username !== null) as MentionedUser[];
+
+  return mentionedUsers;
 };

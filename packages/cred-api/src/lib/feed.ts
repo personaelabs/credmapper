@@ -1,9 +1,9 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
-import { Cred, CredData, FeedItem, MentionedUser } from '../types';
+import { CredData, FeedItem, MentionedUser } from '../types';
 import channels from '../../channels.json';
 import CRED_META from '../../credMeta';
-import { insertBytes } from './utils';
+import { getMentionedUsersInCasts, insertBytes } from './utils';
 
 const PAGE_SIZE = 20;
 
@@ -24,8 +24,8 @@ function insertMentions(text: string, usernames: string[], positions: number[]):
   return decoder.decode(bytes);
 }
 
-export const castToFeedItem = (
-  cast: CastWithChildrenSelectResult | CastSelectResult,
+export const castToFeedItem = <C extends CastSelectResult>(
+  cast: C,
   mentionedUsers: MentionedUser[],
 ): Omit<FeedItem, 'children'> => {
   const usernames = cast.mentions.map(
@@ -52,16 +52,6 @@ export const castToFeedItem = (
     channel: channels.find((c) => c.parent_url === cast.parentUrl)!,
     reactions: cast.Reaction,
     repliesCount: cast._count.children,
-  };
-};
-
-export const castWithChildrenToFeedItem = (
-  cast: CastWithChildrenSelectResult,
-  mentionedUsers: MentionedUser[],
-): FeedItem => {
-  return {
-    ...castToFeedItem(cast, mentionedUsers),
-    children: cast.children.map((child) => castToFeedItem(child, mentionedUsers)),
   };
 };
 
@@ -104,29 +94,15 @@ export const CastSelect = {
   },
 };
 
-export const CastWithChildrenSelect = {
-  ...CastSelect,
-  children: {
-    select: {
-      ...CastSelect,
-      children: false,
-    },
-  },
-};
-
 export type CastSelectResult = Prisma.PackagedCastGetPayload<{
   select: typeof CastSelect;
-}>;
-
-export type CastWithChildrenSelectResult = Prisma.PackagedCastGetPayload<{
-  select: typeof CastWithChildrenSelect;
 }>;
 
 const SPOTLIGHT_CRED = CRED_META.filter((c) => c.spotlight).map((c) => c.id.toString());
 
 export const getSpotlightFeed = async (skip: number) => {
   const casts = await prisma.packagedCast.findMany({
-    select: CastWithChildrenSelect,
+    select: CastSelect,
     where: {
       parentHash: null,
       user: {
@@ -146,37 +122,10 @@ export const getSpotlightFeed = async (skip: number) => {
     },
   });
 
-  const mentionedFids = new Set<bigint>();
-
-  for (const cast of casts) {
-    for (const mention of cast.mentions) {
-      mentionedFids.add(mention);
-    }
-    for (const child of cast.children) {
-      for (const mention of child.mentions) {
-        mentionedFids.add(mention);
-      }
-    }
-  }
-
-  const mentionedUsers = (
-    await prisma.user.findMany({
-      select: {
-        fid: true,
-        username: true,
-      },
-      where: {
-        fid: {
-          in: [...mentionedFids],
-        },
-      },
-    })
-  ).filter((user) => user.username !== null) as MentionedUser[];
+  const mentionedUsers = await getMentionedUsersInCasts(casts);
 
   const hasNextPage = casts.length > PAGE_SIZE;
-  const feed = casts
-    .slice(0, PAGE_SIZE)
-    .map((cast) => castWithChildrenToFeedItem(cast, mentionedUsers));
+  const feed = casts.slice(0, PAGE_SIZE).map((cast) => castToFeedItem(cast, mentionedUsers));
 
   return {
     feed,
@@ -190,7 +139,7 @@ export const getFollowingFeed = async (skip: number, username: string) => {
 
 export const getUserFeed = async (fid: bigint, skip: number) => {
   const casts = await prisma.packagedCast.findMany({
-    select: CastWithChildrenSelect,
+    select: CastSelect,
     where: {
       parentHash: null,
       user: {
@@ -204,37 +153,10 @@ export const getUserFeed = async (fid: bigint, skip: number) => {
     },
   });
 
-  const mentionedFids = new Set<bigint>();
-
-  for (const cast of casts) {
-    for (const mention of cast.mentions) {
-      mentionedFids.add(mention);
-    }
-    for (const child of cast.children) {
-      for (const mention of child.mentions) {
-        mentionedFids.add(mention);
-      }
-    }
-  }
-
-  const mentionedUsers = (
-    await prisma.user.findMany({
-      select: {
-        fid: true,
-        username: true,
-      },
-      where: {
-        fid: {
-          in: [...mentionedFids],
-        },
-      },
-    })
-  ).filter((user) => user.username !== null) as MentionedUser[];
+  const mentionedUsers = await getMentionedUsersInCasts(casts);
 
   const hasNextPage = casts.length > PAGE_SIZE;
-  const feed = casts
-    .slice(0, PAGE_SIZE)
-    .map((cast) => castWithChildrenToFeedItem(cast, mentionedUsers));
+  const feed = casts.slice(0, PAGE_SIZE).map((cast) => castToFeedItem(cast, mentionedUsers));
 
   return {
     feed,

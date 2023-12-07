@@ -1,14 +1,29 @@
 import 'dotenv/config';
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/src/prisma';
-import { CastWithChildrenSelect, castToFeedItem, CastSelect } from '@/src/lib/feed';
-import { MentionedUser } from '@/src/types';
+import { castToFeedItem, CastSelect } from '@/src/lib/feed';
+import { Prisma } from '@prisma/client';
+import { getMentionedUsersInCasts } from '@/src/lib/utils';
 
 // Define a custom serialization method for BigInt
 // @ts-ignore
 BigInt.prototype.toJSON = function () {
   return this.toString();
 };
+
+const CastWithChildrenSelect = {
+  ...CastSelect,
+  children: {
+    select: {
+      ...CastSelect,
+      children: false,
+    },
+  },
+};
+
+export type CastWithChildrenSelectResult = Prisma.PackagedCastGetPayload<{
+  select: typeof CastWithChildrenSelect;
+}>;
 
 // Get a cast and its children (doesn't include descendants yet)
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -29,31 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(404).json({ error: 'Cast not found' });
   }
 
-  const mentionedFids = new Set<bigint>();
-
-  for (const mention of cast.mentions) {
-    mentionedFids.add(mention);
-  }
-  for (const child of cast.children) {
-    for (const mention of child.mentions) {
-      mentionedFids.add(mention);
-    }
-  }
-
-  const mentionedUsers = (
-    await prisma.user.findMany({
-      select: {
-        fid: true,
-        username: true,
-      },
-      where: {
-        fid: {
-          in: [...mentionedFids],
-        },
-      },
-    })
-  ).filter((user) => user.username !== null) as MentionedUser[];
-
+  const mentionedUsers = await getMentionedUsersInCasts([cast, ...cast.children]);
   const castAsFeedItem = castToFeedItem(cast, mentionedUsers);
 
   const childrenAsFeedItems = cast.children
