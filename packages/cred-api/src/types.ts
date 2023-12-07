@@ -112,10 +112,20 @@ export interface Channel {
   image: string;
 }
 
-export interface Cred {
+export interface CredData {
   name: string;
   image: string;
 }
+
+export type Cred =
+  | 'OnchainSince2016'
+  | 'BeaconDepositOver256ETH'
+  | 'BeaconGenesisDepositor'
+  | 'Over10000Txs'
+  | 'SuperRareOg'
+  | 'Nouns'
+  | 'Milady'
+  | 'Purple';
 
 export interface FeedItem {
   id: string;
@@ -126,7 +136,7 @@ export interface FeedItem {
   pfp: string;
   text: string;
   timestamp: Date;
-  cred: Cred[];
+  cred: CredData[];
   mentions: string[];
   embeds: string[];
   parentUrl: string | null;
@@ -134,4 +144,11 @@ export interface FeedItem {
   reactions: Pick<Reaction, 'reactionType'>[];
   repliesCount: number;
   children: Omit<FeedItem, 'children'>[];
+}
+
+export interface CredMeta {
+  id: Cred;
+  name: string;
+  image: string;
+  spotlight: boolean;
 }

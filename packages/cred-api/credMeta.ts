@@ -1,11 +1,8 @@
+import { Cred, CredMeta } from './src/types';
 import 'dotenv/config';
 
-const credMeta = [
-  {
-    id: 'Nouns_owner',
-    name: 'Nouner',
-    image: 'https://warpcast.com/~/channel-images/nouns.png',
-  },
+const credMeta: CredMeta[] = [
+  /*
   {
     id: 'Devcon 5_owner',
     name: 'Devcon 5',
@@ -27,19 +24,6 @@ const credMeta = [
       'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20Artist%20(2021).png',
   },
   {
-    id: 'SuperRare OG Member Badge_owner',
-    name: 'SuperRare OG Member',
-    image:
-      //'https://downloads.intercomcdn.com/i/o/459919625/19f9536bc26f9bd56fdf0d02/2021_XCOPY_SR_BADGE_+%281%29.gif',
-      'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20OG.png',
-  },
-  {
-    id: 'Milady_owner',
-    name: 'Milady Owner',
-    image:
-      'https://i.seadn.io/gae/a_frplnavZA9g4vN3SexO5rrtaBX_cBTaJYcgrPtwQIqPhzgzUendQxiwUdr51CGPE2QyPEa1DHnkW1wLrHAv5DgfC3BP-CWpFq6BA?auto=format&dpr=1&w=384',
-  },
-  {
     id: 'Crypto Punks_owner',
     name: 'Crypto Punks Owner',
     image:
@@ -50,6 +34,62 @@ const credMeta = [
     name: 'Pudgy Penguins Owner',
     image:
       'https://i.seadn.io/gae/yNi-XdGxsgQCPpqSio4o31ygAV6wURdIdInWRcFIl46UjUQ1eV7BEndGe8L661OoG-clRi7EgInLX4LPu9Jfw4fq0bnVYHqg7RFi?auto=format&dpr=1&w=128',
+  },
+  */
+  {
+    id: 'Nouns',
+    name: 'Nouns Owner',
+    image: 'https://warpcast.com/~/channel-images/nouns.png',
+    spotlight: true,
+  },
+  {
+    id: 'Milady',
+    name: 'Milady Owner',
+    image:
+      'https://i.seadn.io/gae/a_frplnavZA9g4vN3SexO5rrtaBX_cBTaJYcgrPtwQIqPhzgzUendQxiwUdr51CGPE2QyPEa1DHnkW1wLrHAv5DgfC3BP-CWpFq6BA?auto=format&dpr=1&w=384',
+    spotlight: true,
+  },
+  {
+    id: 'Purple',
+    name: 'Purple Owner',
+    image:
+      'https://i.seadn.io/gae/2R29pIWneHAMHH0e2Lcqsilv7vRBpnYngrKOZXBkhpyrlBVgcJzgPxPq_pWujLggzy-EW1Jt9QJIOQW7t95ufdgvwCAITd4fw0DvQJM?w=500&auto=format',
+    spotlight: true,
+  },
+  {
+    id: 'Over10000Txs',
+    name: 'Over 10,000 Txs',
+    image:
+      'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-diamond-rainbow.png',
+    spotlight: true,
+  },
+  {
+    id: 'BeaconDepositOver256ETH',
+    name: 'Beacon Deposit Over 256 ETH',
+    image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/core.png',
+    spotlight: true,
+  },
+  {
+    id: 'OnchainSince2016',
+    name: 'Onchain since 2016',
+    image:
+      'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-diamond-rainbow.png',
+    spotlight: true,
+  },
+  {
+    id: 'SuperRareOg',
+    name: 'SuperRare OG',
+    image:
+      //'https://downloads.intercomcdn.com/i/o/459919625/19f9536bc26f9bd56fdf0d02/2021_XCOPY_SR_BADGE_+%281%29.gif',
+      'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20OG.png',
+    spotlight: true,
+  },
+  {
+    id: 'BeaconGenesisDepositor',
+    name: 'Beacon Genesis Depositor',
+    image:
+      'https://storage.googleapis.com/personae-proving-keys/creddd/images/beacon-chain-genesis-depositor-2020.png',
+    spotlight: true,
   },
 ];
 

@@ -14,7 +14,7 @@ const BEACON_CONTRACT: ContractWithDeployedBlock = {
   deployedBlock: FIRST_DEPOSIT_AT,
 };
 
-export const indexBeaconDepositors = async () => {
+export const syncBeaconDepositors = async () => {
   const client = getClient(chains.mainnet);
   const processor = async (logs: GetFilterLogsReturnType) => {
     const data = (
@@ -62,23 +62,4 @@ export const indexBeaconDepositors = async () => {
     BEACON_CONTRACT,
     BigInt(100),
   );
-};
-
-export const syncBeaconDepositors = async () => {
-  const latestEvent = await prisma.beaconDepositEvent.aggregate({
-    _max: {
-      blockNumber: true,
-    },
-  });
-
-  const latestBlock = await getClient(chains.mainnet).getBlockNumber();
-
-  const syncedBlock = latestEvent?._max.blockNumber || FIRST_DEPOSIT_AT;
-  if (syncedBlock > latestBlock - BigInt(10000)) {
-    await indexBeaconDepositors();
-  } else {
-    console.log(
-      `Skipping beacon depositors sync. Latest block: ${latestBlock} Synced block: ${syncedBlock}`,
-    );
-  }
 };

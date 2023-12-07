@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
-import { Cred, FeedItem } from '../types';
+import { Cred, CredData, FeedItem } from '../types';
 import channels from '../../channels.json';
 import CRED_META from '../../credMeta';
 
@@ -18,9 +18,9 @@ export const castToFeedItem = (
     text: cast.text,
     timestamp: cast.timestamp,
     embeds: cast.embeds,
-    cred: cast.user.UserCred.map((cred) => CRED_META.find((c) => c.id === cred.cred)).filter(
-      (c) => c !== undefined,
-    ) as Cred[],
+    cred: cast.user.UserCred.map((cred) =>
+      CRED_META.find((c) => c.id.toString() === cred.cred),
+    ).filter((c) => c !== undefined) as CredData[],
     parentUrl: cast.parentUrl,
     parentHash: cast.parentHash,
     mentions: cast.mentions.map((mention) => mention.toString()),
@@ -94,7 +94,9 @@ export type CastWithChildrenSelectResult = Prisma.PackagedCastGetPayload<{
   select: typeof CastWithChildrenSelect;
 }>;
 
-export const getCredFeed = async (skip: number) => {
+const SPOTLIGHT_CRED = CRED_META.filter((c) => c.spotlight).map((c) => c.id.toString());
+
+export const getSpotlightFeed = async (skip: number) => {
   const casts = await prisma.packagedCast.findMany({
     select: CastWithChildrenSelect,
     where: {
@@ -102,8 +104,8 @@ export const getCredFeed = async (skip: number) => {
       user: {
         UserCred: {
           some: {
-            NOT: {
-              cred: undefined,
+            cred: {
+              in: SPOTLIGHT_CRED,
             },
           },
         },
@@ -130,7 +132,6 @@ export const getFollowingFeed = async (skip: number, username: string) => {
 };
 
 export const getUserFeed = async (fid: bigint, skip: number) => {
-  console.log({ fid });
   const casts = await prisma.packagedCast.findMany({
     select: CastWithChildrenSelect,
     where: {

@@ -135,7 +135,7 @@ export const syncCasts = async () => {
     console.log('latestCastTimestamp', latestCastTimestamp);
     const rootCasts = await getNewRootCasts(latestCastTimestamp || FROM_DATE);
 
-    console.log(`Indexing ${rootCasts.length} new root casts`);
+    console.log(`Indexing ${rootCasts.length} new root casts...`);
 
     await prisma.packagedCast.createMany({
       data: rootCasts.filter((cast) => binarySearch(fids, cast.fid) !== -1).map(toPackagedCast),
@@ -152,7 +152,7 @@ export const syncCasts = async () => {
 
     const childrenCasts = await getNewChildrenCasts(latestCastTimestamp || FROM_DATE);
 
-    console.log(`Indexing ${childrenCasts.length} new children casts`);
+    console.log(`Indexing ${childrenCasts.length} replies...`);
 
     await prisma.packagedCast.createMany({
       data: childrenCasts
@@ -186,11 +186,8 @@ export const syncReactions = async () => {
     })
   ).map((cast) => cast.id);
 
-  console.time('Get new reactions');
   const newReactions = await getNewReactions(latestReactionTimestamp || FROM_DATE);
-  console.timeEnd('Get new reactions');
 
-  console.time('Filtering');
   const data = newReactions
     .map((reaction) => ({
       fid: reaction.fid,
@@ -199,7 +196,6 @@ export const syncReactions = async () => {
       reactionType: reaction.reaction_type,
     }))
     .filter((reaction) => castIds.includes(reaction.castId));
-  console.timeEnd('Filtering');
 
   console.log(`Indexing ${data.length} new reactions`);
   await prisma.reaction.createMany({

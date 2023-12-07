@@ -82,6 +82,7 @@ export const runInParallel = async <T>(
   fn: (client: PublicClient<HttpTransport, chains.Chain>, params: T) => Promise<void>,
   params: T[],
 ) => {
+  const numJobs = params.length;
   let queuedParams = params.map((param, i) => {
     return {
       param,
@@ -89,6 +90,7 @@ export const runInParallel = async <T>(
     };
   });
   let activeClients: number[] = [];
+  const completedJobs = new Set<number>();
 
   const allClientIds = new Array(NUM_MAINNET_CLIENTS).fill(0).map((_, i) => i);
 
@@ -107,6 +109,7 @@ export const runInParallel = async <T>(
       const promise = fn(client, param)
         .then(() => {
           activeClients = activeClients.filter((id) => id !== clientId);
+          completedJobs.add(queuedParam.index);
           console.log(
             chalk.green(
               `Completed job ${queuedParam.index}/${params.length} with client ${clientId}`,
@@ -116,6 +119,7 @@ export const runInParallel = async <T>(
         .catch((err) => {
           console.error(err);
           activeClients = activeClients.filter((id) => id !== clientId);
+          completedJobs.add(queuedParam.index);
           console.log(
             chalk.red(`Failed job ${queuedParam.index}/${params.length} with client ${clientId}`),
           );
@@ -130,7 +134,7 @@ export const runInParallel = async <T>(
       queuedParams.shift();
     }
 
-    if (queuedParams.length === 0) {
+    if (completedJobs.size === numJobs) {
       console.log(chalk.green('All jobs completed'));
       break;
     }

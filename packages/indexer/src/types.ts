@@ -147,11 +147,6 @@ export interface ContractEventInfo {
   event: AbiEvent;
 }
 
-export interface CurrentOwnersQueryResult {
-  tokenId: bigint;
-  owner: Hex;
-}
-
 export interface ERC20TokenHoldingsQueryResult {
   total_value_in: number;
   total_value_out: number;
@@ -211,3 +206,13 @@ export interface IndexedCoin {
   dbId: number;
   totalSupply?: string;
 }
+
+export type Cred =
+  | 'OnchainSince2016'
+  | 'BeaconDepositOver256ETH'
+  | 'BeaconGenesisDepositor'
+  | 'Over10000Txs'
+  | 'SuperRareOg'
+  | 'Nouns'
+  | 'Milady'
+  | 'Purple';

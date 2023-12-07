@@ -177,7 +177,6 @@ export const syncUsers = async () => {
     console.log(`Updating ${updatedFids.length} users`);
 
     for (const fid of updatedFids) {
-      console.time(`Update user ${fid}`);
       const userProfile: Prisma.UserUpdateInput = {};
 
       const pfp = pfps.find((r) => r.fid === fid);
@@ -207,7 +206,6 @@ export const syncUsers = async () => {
         create: { fid, followersCount: 0, ...userProfile } as Prisma.UserCreateInput,
         update: userProfile,
       });
-      console.timeEnd(`Update user ${fid}`);
     }
   }
 };
@@ -310,7 +308,6 @@ export const getCasts = async (options: GetCastsOptions): Promise<CastsQueryResu
 };
 
 export const getAllAddresses = async (): Promise<ConnectedAddressesQueryResults[]> => {
-  console.time('Get connected addresses');
   const connectedAddresses = await fcReplicaClient.$queryRaw<ConnectedAddressesQueryResults[]>`
       SELECT
           "verified_addresses",
@@ -318,7 +315,6 @@ export const getAllAddresses = async (): Promise<ConnectedAddressesQueryResults[
       FROM
         profile_with_addresses
    `;
-  console.timeEnd('Get connected addresses');
 
   return connectedAddresses;
 };

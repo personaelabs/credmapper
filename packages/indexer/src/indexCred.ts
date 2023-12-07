@@ -1,42 +1,51 @@
+import chalk from 'chalk';
 import { syncCasts, syncReactions } from './casts';
-import assignERC721s from './cred/assignERC721s';
+import {
+  assignOver10000Txs,
+  assignOnchainSince2016,
+  assignBeaconDepositOver256Eth,
+  assignSuperRareOgs,
+  assignBeaconGenesisDepositors,
+  assignNouns,
+  assignMilady,
+  assignPurple,
+} from './lib/assignCredJobs';
 import { syncUsers } from './providers/farcaster';
-import { syncERC721 } from './providers/erc721/erc721';
-import { syncPoap } from './providers/poap/poap';
-import assignPoap from './cred/assignPoap';
-import { syncAccounts } from './providers/account';
-// import { syncBeaconDepositors } from './providers/beaconDepositor/beaconDepositor';
-// import assignOnChainSince2016 from './cred/assignOnChainSince2016';
-// import assignBeaconDepositors from './cred/assignBeaconDepositors';
+
+// List of jobs that index data and assign cred to Farcaster users
+const assignCredJobs = [
+  assignOver10000Txs,
+  assignOnchainSince2016,
+  // assignBeaconDepositOver256Eth,
+  assignSuperRareOgs,
+  assignBeaconGenesisDepositors,
+  assignNouns,
+  assignMilady,
+  assignPurple,
+];
+
+// List of jobs that index data from Farcaster
+const farcasterSyncJobs = [syncUsers, syncCasts, syncReactions];
 
 const indexCred = async () => {
-  await syncAccounts();
-  // await assignOnChainSince2016();
+  const startTime = Date.now();
+  for (let i = 0; i < farcasterSyncJobs.length; i++) {
+    const farcasterSyncJob = farcasterSyncJobs[i];
+    console.log(
+      chalk.blue(`(${i + 1}/${farcasterSyncJobs.length}) Running ${farcasterSyncJob.name}`),
+    );
+    await farcasterSyncJob();
+  }
 
-  console.time('syncUsers');
-  await syncUsers();
-  console.timeEnd('syncUsers');
+  for (let i = 0; i < assignCredJobs.length; i++) {
+    const assignCredJob = assignCredJobs[i];
+    console.log(chalk.blue(`${i + 1}/${assignCredJobs.length} Running ${assignCredJob.name}`));
+    await assignCredJob();
+  }
 
-  // await syncERC721();
-  await assignERC721s();
-
-  // await syncPoap();
-  await assignPoap();
-
-  // sync casts
-  console.time('syncCasts');
-  await syncCasts();
-  console.timeEnd('syncCasts');
-
-  // sync reactions
-  console.time('syncReactions');
-  await syncReactions();
-  console.timeEnd('syncReactions');
-
-  console.time('syncBeaconDepositors');
-  // await syncBeaconDepositors();
-  // await assignBeaconDepositors();
-  console.timeEnd('syncBeaconDepositors');
+  const endTime = Date.now();
+  const elapsedSeconds = Math.round((endTime - startTime) / 1000);
+  console.log(chalk.green(`Done! Took: ${elapsedSeconds}s`));
 };
 
 indexCred();

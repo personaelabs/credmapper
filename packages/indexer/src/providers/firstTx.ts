@@ -5,10 +5,11 @@ import { TxListResponse } from '../types';
 import * as chains from 'viem/chains';
 import { getAllAddresses } from './farcaster';
 
-export const syncAccounts = async () => {
+export const syncFirstTxs = async () => {
   const connectedAddresses = await getAllAddresses();
   const addresses = connectedAddresses.map((account) => account.verified_addresses).flat();
 
+  // Get addresses that are already indexed
   const indexedAddresses = (
     await prisma.address.findMany({
       select: {
@@ -17,6 +18,7 @@ export const syncAccounts = async () => {
     })
   ).map((address) => address.address);
 
+  // Get addresses that are not indexed
   const addressesToIndex = [
     ...new Set(addresses.filter((address) => !indexedAddresses.includes(address))),
   ];

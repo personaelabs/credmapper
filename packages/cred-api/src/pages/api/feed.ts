@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { GetFeedQueryParams, FeedQueryResult, Feed } from '@/src/types';
-import { getCredFeed } from '@/src/lib/feed';
+import { getSpotlightFeed } from '@/src/lib/feed';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -14,10 +14,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const feed = Number(query.feed);
 
   if (feed === Feed.Spotlight) {
-    const { feed, hasNextPage } = await getCredFeed(offset);
+    const { feed, hasNextPage } = await getSpotlightFeed(offset);
     res.status(200).json({ feed, hasNextPage });
   } else if (feed === Feed.Following) {
-    const { feed, hasNextPage } = await getCredFeed(offset);
+    const { feed, hasNextPage } = await getSpotlightFeed(offset);
     res.status(200).json({ feed, hasNextPage });
   } else {
     res.status(400).json({ error: 'Invalid query' });

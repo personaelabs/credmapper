@@ -15,11 +15,20 @@ const CONTRACTS: ContractWithDeployedBlock[] = [
     deployedBlock: BigInt(13090020),
     indexed: true,
   },
+  /*
   {
     id: 303,
     name: 'Pudgy Penguins',
     address: '0xbd3531da5cf5857e7cfaa92426877b022e612cf8',
     deployedBlock: BigInt(12876179),
+    indexed: true,
+  },
+  */
+  {
+    id: 304,
+    name: 'Purple',
+    address: '0xa45662638E9f3bbb7A6FeCb4B17853B7ba0F3a60',
+    deployedBlock: BigInt(15826300),
     indexed: true,
   },
 ];

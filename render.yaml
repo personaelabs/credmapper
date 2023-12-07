@@ -43,7 +43,7 @@ services:
     region: oregon
     rootDir: ./
     branch: main
-    schedule: '0 0 * * *'
+    schedule: '*/15 * * * *'
     buildCommand: pnpm i && pnpm -F db migrate:prod
     startCommand: pnpm -F indexer exec ts-node ./src/indexCred.ts
     buildFilter:
