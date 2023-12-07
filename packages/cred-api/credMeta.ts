@@ -54,7 +54,7 @@ const credMeta: CredMeta[] = [
     name: 'Purple Owner',
     image:
       'https://i.seadn.io/gae/2R29pIWneHAMHH0e2Lcqsilv7vRBpnYngrKOZXBkhpyrlBVgcJzgPxPq_pWujLggzy-EW1Jt9QJIOQW7t95ufdgvwCAITd4fw0DvQJM?w=500&auto=format',
-    spotlight: true,
+    spotlight: false,
   },
   {
     id: 'Over10000Txs',
