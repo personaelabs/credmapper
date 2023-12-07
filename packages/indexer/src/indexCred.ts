@@ -44,7 +44,12 @@ const indexCred = async () => {
   for (let i = 0; i < assignCredJobs.length; i++) {
     const assignCredJob = assignCredJobs[i];
     console.log(chalk.blue(`${i + 1}/${assignCredJobs.length} Running ${assignCredJob.name}`));
-    await assignCredJob();
+    try {
+      await assignCredJob();
+    } catch (err) {
+      console.log(chalk.red(`Error running ${assignCredJob.name}`));
+      console.log(err);
+    }
   }
 
   const endTime = Date.now();
