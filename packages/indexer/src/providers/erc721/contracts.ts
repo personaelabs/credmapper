@@ -25,7 +25,7 @@ const CONTRACTS: ContractWithDeployedBlock[] = [
   {
     id: 304,
     name: 'Purple',
-    address: '0xa45662638E9f3bbb7A6FeCb4B17853B7ba0F3a60',
+    address: '0xa45662638e9f3bbb7a6fecb4b17853b7ba0f3a60',
     deployedBlock: BigInt(15826300),
     indexed: true,
   },
