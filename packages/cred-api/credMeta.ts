@@ -49,6 +49,7 @@ const credMeta: CredMeta[] = [
       'https://i.seadn.io/gae/a_frplnavZA9g4vN3SexO5rrtaBX_cBTaJYcgrPtwQIqPhzgzUendQxiwUdr51CGPE2QyPEa1DHnkW1wLrHAv5DgfC3BP-CWpFq6BA?auto=format&dpr=1&w=384',
     spotlight: true,
   },
+  /*
   {
     id: 'Purple',
     name: 'Purple Owner',
@@ -56,6 +57,7 @@ const credMeta: CredMeta[] = [
       'https://i.seadn.io/gae/2R29pIWneHAMHH0e2Lcqsilv7vRBpnYngrKOZXBkhpyrlBVgcJzgPxPq_pWujLggzy-EW1Jt9QJIOQW7t95ufdgvwCAITd4fw0DvQJM?w=500&auto=format',
     spotlight: false,
   },
+  */
   {
     id: 'Over10000Txs',
     name: 'Over 10,000 Txs',
