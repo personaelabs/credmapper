@@ -16,7 +16,7 @@ import { syncUsers } from './providers/farcaster';
 const assignCredJobs = [
   assignOver10000Txs,
   assignOnchainSince2016,
-  // assignBeaconDepositOver256Eth,
+  assignBeaconDepositOver256Eth,
   assignSuperRareOgs,
   assignBeaconGenesisDepositors,
   assignNouns,
