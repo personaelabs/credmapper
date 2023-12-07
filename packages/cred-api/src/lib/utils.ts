@@ -18,3 +18,23 @@ export const binarySearch = (arr: number[], target: number): number => {
 
   return -1; // Target not found
 };
+
+export const insertBytes = (
+  originalArray: Uint8Array,
+  newBytes: Uint8Array,
+  insertPosition: number,
+): Uint8Array => {
+  // Create a new array with the size of the original array plus the new bytes
+  let newArray = new Uint8Array(originalArray.length + newBytes.length);
+
+  // Copy the first part of the original array (up to the insert position)
+  newArray.set(originalArray.slice(0, insertPosition), 0);
+
+  // Insert the new bytes
+  newArray.set(newBytes, insertPosition);
+
+  // Copy the remaining part of the original array (after the insert position)
+  newArray.set(originalArray.slice(insertPosition), insertPosition + newBytes.length);
+
+  return newArray;
+};

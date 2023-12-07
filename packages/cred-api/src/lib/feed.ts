@@ -1,21 +1,46 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
-import { Cred, CredData, FeedItem } from '../types';
+import { Cred, CredData, FeedItem, MentionedUser } from '../types';
 import channels from '../../channels.json';
 import CRED_META from '../../credMeta';
+import { insertBytes } from './utils';
 
 const PAGE_SIZE = 20;
 
+function insertMentions(text: string, usernames: string[], positions: number[]): string {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let bytes = encoder.encode(text);
+
+  let offset = 0;
+  for (let i = 0; i < usernames.length; i++) {
+    const word = usernames[i];
+    const position = positions[i];
+    const encodedUsername = encoder.encode(word);
+    bytes = insertBytes(bytes, encodedUsername, position + offset);
+    offset += encodedUsername.length;
+  }
+
+  return decoder.decode(bytes);
+}
+
 export const castToFeedItem = (
   cast: CastWithChildrenSelectResult | CastSelectResult,
+  mentionedUsers: MentionedUser[],
 ): Omit<FeedItem, 'children'> => {
+  const usernames = cast.mentions.map(
+    (mention) =>
+      `@${mentionedUsers.find((user) => user.fid === mention)?.username || mention.toString()}`,
+  );
+  const textWithMentions = insertMentions(cast.text, usernames, cast.mentionsPositions);
+
   return {
     id: cast.id,
     username: cast.user.username || '',
     displayName: cast.user.displayName || '',
     pfp: cast.user.pfp || '',
     fid: cast.fid.toString(),
-    text: cast.text,
+    text: textWithMentions,
     timestamp: cast.timestamp,
     embeds: cast.embeds,
     cred: cast.user.UserCred.map((cred) =>
@@ -30,10 +55,13 @@ export const castToFeedItem = (
   };
 };
 
-export const castWithChildrenToFeedItem = (cast: CastWithChildrenSelectResult): FeedItem => {
+export const castWithChildrenToFeedItem = (
+  cast: CastWithChildrenSelectResult,
+  mentionedUsers: MentionedUser[],
+): FeedItem => {
   return {
-    ...castToFeedItem(cast),
-    children: cast.children.map(castToFeedItem),
+    ...castToFeedItem(cast, mentionedUsers),
+    children: cast.children.map((child) => castToFeedItem(child, mentionedUsers)),
   };
 };
 
@@ -118,8 +146,37 @@ export const getSpotlightFeed = async (skip: number) => {
     },
   });
 
+  const mentionedFids = new Set<bigint>();
+
+  for (const cast of casts) {
+    for (const mention of cast.mentions) {
+      mentionedFids.add(mention);
+    }
+    for (const child of cast.children) {
+      for (const mention of child.mentions) {
+        mentionedFids.add(mention);
+      }
+    }
+  }
+
+  const mentionedUsers = (
+    await prisma.user.findMany({
+      select: {
+        fid: true,
+        username: true,
+      },
+      where: {
+        fid: {
+          in: [...mentionedFids],
+        },
+      },
+    })
+  ).filter((user) => user.username !== null) as MentionedUser[];
+
   const hasNextPage = casts.length > PAGE_SIZE;
-  const feed = casts.slice(0, PAGE_SIZE).map(castWithChildrenToFeedItem);
+  const feed = casts
+    .slice(0, PAGE_SIZE)
+    .map((cast) => castWithChildrenToFeedItem(cast, mentionedUsers));
 
   return {
     feed,
@@ -147,8 +204,37 @@ export const getUserFeed = async (fid: bigint, skip: number) => {
     },
   });
 
+  const mentionedFids = new Set<bigint>();
+
+  for (const cast of casts) {
+    for (const mention of cast.mentions) {
+      mentionedFids.add(mention);
+    }
+    for (const child of cast.children) {
+      for (const mention of child.mentions) {
+        mentionedFids.add(mention);
+      }
+    }
+  }
+
+  const mentionedUsers = (
+    await prisma.user.findMany({
+      select: {
+        fid: true,
+        username: true,
+      },
+      where: {
+        fid: {
+          in: [...mentionedFids],
+        },
+      },
+    })
+  ).filter((user) => user.username !== null) as MentionedUser[];
+
   const hasNextPage = casts.length > PAGE_SIZE;
-  const feed = casts.slice(0, PAGE_SIZE).map(castWithChildrenToFeedItem);
+  const feed = casts
+    .slice(0, PAGE_SIZE)
+    .map((cast) => castWithChildrenToFeedItem(cast, mentionedUsers));
 
   return {
     feed,

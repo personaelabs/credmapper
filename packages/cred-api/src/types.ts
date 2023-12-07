@@ -6,6 +6,11 @@ export enum Feed {
   Following = 2,
 }
 
+export interface MentionedUser {
+  fid: bigint;
+  username: string;
+}
+
 export interface CastEmbed {
   url: string;
 }
