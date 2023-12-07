@@ -56,6 +56,10 @@ export interface GetUserFeedQueryParams {
   offset?: string;
 }
 
+export interface GetCredUsersQueryParams {
+  cred: Cred;
+}
+
 export interface GetAccountQueryParams {
   custodyAddress: string;
 }
@@ -118,6 +122,7 @@ export interface Channel {
 }
 
 export interface CredData {
+  id: string;
   name: string;
   image: string;
 }
