@@ -51,6 +51,11 @@ export interface GetFeedQueryParams {
   offset?: string;
 }
 
+export interface GetCredFeedQueryParams {
+  cred: Cred;
+  offset?: string;
+}
+
 export interface GetUserFeedQueryParams {
   fid: string;
   offset?: string;
