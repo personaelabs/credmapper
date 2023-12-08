@@ -49,6 +49,13 @@ const credMeta: CredMeta[] = [
       'https://i.seadn.io/gae/a_frplnavZA9g4vN3SexO5rrtaBX_cBTaJYcgrPtwQIqPhzgzUendQxiwUdr51CGPE2QyPEa1DHnkW1wLrHAv5DgfC3BP-CWpFq6BA?auto=format&dpr=1&w=384',
     spotlight: true,
   },
+  {
+    id: 'Azuki',
+    name: 'Azuki Owner',
+    image:
+      'https://images.blur.io/_blur-prod/0xed5af388653567af2f388e6224dc7c4b3241c544/4361-29b9f08af6d9c52f?w=128',
+    spotlight: true,
+  },
   /*
   {
     id: 'Purple',
@@ -61,21 +68,19 @@ const credMeta: CredMeta[] = [
   {
     id: 'Over10000Txs',
     name: 'Over 10,000 Txs',
-    image:
-      'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-diamond-rainbow.png',
+    image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-logo2.png',
     spotlight: true,
   },
   {
     id: 'BeaconDepositOver256ETH',
     name: 'Beacon Deposit Over 256 ETH',
-    image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/core.png',
+    image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/core%20Small.png',
     spotlight: true,
   },
   {
     id: 'OnchainSince2016',
     name: 'Onchain since 2016',
-    image:
-      'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-diamond-rainbow.png',
+    image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-logo2.png',
     spotlight: true,
   },
   {
