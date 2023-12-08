@@ -41,6 +41,7 @@ const credMeta: CredMeta[] = [
     name: 'Nouns Owner',
     image: 'https://warpcast.com/~/channel-images/nouns.png',
     spotlight: true,
+    frequent: true,
   },
   {
     id: 'Milady',
@@ -48,6 +49,7 @@ const credMeta: CredMeta[] = [
     image:
       'https://i.seadn.io/gae/a_frplnavZA9g4vN3SexO5rrtaBX_cBTaJYcgrPtwQIqPhzgzUendQxiwUdr51CGPE2QyPEa1DHnkW1wLrHAv5DgfC3BP-CWpFq6BA?auto=format&dpr=1&w=384',
     spotlight: true,
+    frequent: true,
   },
   {
     id: 'Azuki',
@@ -55,33 +57,36 @@ const credMeta: CredMeta[] = [
     image:
       'https://images.blur.io/_blur-prod/0xed5af388653567af2f388e6224dc7c4b3241c544/4361-29b9f08af6d9c52f?w=128',
     spotlight: true,
+    frequent: false,
   },
-  /*
   {
     id: 'Purple',
     name: 'Purple Owner',
     image:
       'https://i.seadn.io/gae/2R29pIWneHAMHH0e2Lcqsilv7vRBpnYngrKOZXBkhpyrlBVgcJzgPxPq_pWujLggzy-EW1Jt9QJIOQW7t95ufdgvwCAITd4fw0DvQJM?w=500&auto=format',
-    spotlight: false,
+    spotlight: true,
+    frequent: true,
   },
-  */
   {
     id: 'Over10000Txs',
     name: 'Over 10,000 Txs',
     image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-logo2.png',
     spotlight: true,
+    frequent: false,
   },
   {
     id: 'BeaconDepositOver256ETH',
     name: 'Beacon Deposit Over 256 ETH',
     image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/core%20Small.png',
     spotlight: true,
+    frequent: false,
   },
   {
     id: 'OnchainSince2016',
     name: 'Onchain since 2016',
     image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-logo2.png',
     spotlight: true,
+    frequent: false,
   },
   {
     id: 'SuperRareOg',
@@ -90,6 +95,7 @@ const credMeta: CredMeta[] = [
       //'https://downloads.intercomcdn.com/i/o/459919625/19f9536bc26f9bd56fdf0d02/2021_XCOPY_SR_BADGE_+%281%29.gif',
       'https://storage.googleapis.com/personae-proving-keys/creddd/images/SuperRare%20OG.png',
     spotlight: true,
+    frequent: false,
   },
   {
     id: 'BeaconGenesisDepositor',
@@ -97,6 +103,7 @@ const credMeta: CredMeta[] = [
     image:
       'https://storage.googleapis.com/personae-proving-keys/creddd/images/beacon-chain-genesis-depositor-2020.png',
     spotlight: true,
+    frequent: false,
   },
 ];
 

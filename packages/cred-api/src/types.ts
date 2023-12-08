@@ -167,4 +167,5 @@ export interface CredMeta {
   name: string;
   image: string;
   spotlight: boolean;
+  frequent: boolean;
 }

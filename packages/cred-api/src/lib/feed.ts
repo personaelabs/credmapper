@@ -5,8 +5,6 @@ import channels from '../../channels.json';
 import CRED_META from '../../credMeta';
 import { getMentionedUsersInCasts, insertBytes } from './utils';
 
-const PAGE_SIZE = 20;
-
 function insertMentions(text: string, usernames: string[], positions: number[]): string {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -98,10 +96,43 @@ export type CastSelectResult = Prisma.PackagedCastGetPayload<{
   select: typeof CastSelect;
 }>;
 
-const SPOTLIGHT_CRED = CRED_META.filter((c) => c.spotlight).map((c) => c.id.toString());
+const SPOTLIGHT_CRED = CRED_META.filter((c) => c.spotlight && c.frequent).map((c) =>
+  c.id.toString(),
+);
+const INFREQUENT_CRED = CRED_META.filter((c) => !c.frequent).map((c) => c.id.toString());
+
+const FREQUENT_CASTS_PAGE_SIZE = 20;
+const INFREQUENT_CASTS_PAGE_SIZE = 5;
 
 export const getSpotlightFeed = async (skip: number) => {
-  const casts = await prisma.packagedCast.findMany({
+  // Cut off date for casts with infrequent cred
+  const infrequentCastsCutoff = new Date().getTime() - 1000 * 60 * 60 * 24 * 7; // 7 days
+
+  // Get casts with infrequent cred
+  const infrequentCasts = await prisma.packagedCast.findMany({
+    select: CastSelect,
+    where: {
+      timestamp: {
+        gt: new Date(infrequentCastsCutoff),
+      },
+      parentHash: null,
+      user: {
+        UserCred: {
+          some: {
+            cred: {
+              in: INFREQUENT_CRED,
+            },
+          },
+        },
+      },
+    },
+    skip,
+    take: INFREQUENT_CASTS_PAGE_SIZE + 1,
+    orderBy: { timestamp: 'desc' },
+  });
+
+  // Get casts with frequent cred
+  const frequentCasts = await prisma.packagedCast.findMany({
     select: CastSelect,
     where: {
       parentHash: null,
@@ -116,16 +147,33 @@ export const getSpotlightFeed = async (skip: number) => {
       },
     },
     skip,
-    take: PAGE_SIZE + 1,
-    orderBy: {
-      timestamp: 'desc',
-    },
+    take: FREQUENT_CASTS_PAGE_SIZE + 1,
+    orderBy: { timestamp: 'desc' },
   });
 
-  const mentionedUsers = await getMentionedUsersInCasts(casts);
+  // Get mentioned users in all casts
+  // We need this to insert @mentions into the text of the casts.
+  const mentionedUsers = await getMentionedUsersInCasts([...infrequentCasts, ...frequentCasts]);
 
-  const hasNextPage = casts.length > PAGE_SIZE;
-  const feed = casts.slice(0, PAGE_SIZE).map((cast) => castToFeedItem(cast, mentionedUsers));
+  const hasNextPage =
+    infrequentCasts.length > FREQUENT_CASTS_PAGE_SIZE ||
+    frequentCasts.length > FREQUENT_CASTS_PAGE_SIZE;
+
+  const infrequentCastsToReturn = infrequentCasts.slice(0, INFREQUENT_CASTS_PAGE_SIZE);
+  const frequentCastsToReturn = frequentCasts.slice(0, FREQUENT_CASTS_PAGE_SIZE);
+
+  // Merge infrequent and frequent casts
+  const casts = [];
+  for (let i = 0; i < Math.max(infrequentCasts.length, frequentCasts.length); i++) {
+    if (infrequentCastsToReturn[i]) {
+      casts.push(infrequentCastsToReturn[i]);
+    }
+    if (frequentCastsToReturn[i]) {
+      casts.push(frequentCastsToReturn[i]);
+    }
+  }
+
+  const feed = casts.map((cast) => castToFeedItem(cast, mentionedUsers));
 
   return {
     feed,
@@ -137,6 +185,7 @@ export const getFollowingFeed = async (skip: number, username: string) => {
   // TODO
 };
 
+const USER_FEED_PAGE_SIZE = 20;
 export const getUserFeed = async (fid: bigint, skip: number) => {
   const casts = await prisma.packagedCast.findMany({
     select: CastSelect,
@@ -147,7 +196,7 @@ export const getUserFeed = async (fid: bigint, skip: number) => {
       },
     },
     skip,
-    take: PAGE_SIZE + 1,
+    take: USER_FEED_PAGE_SIZE + 1,
     orderBy: {
       timestamp: 'desc',
     },
@@ -155,8 +204,10 @@ export const getUserFeed = async (fid: bigint, skip: number) => {
 
   const mentionedUsers = await getMentionedUsersInCasts(casts);
 
-  const hasNextPage = casts.length > PAGE_SIZE;
-  const feed = casts.slice(0, PAGE_SIZE).map((cast) => castToFeedItem(cast, mentionedUsers));
+  const hasNextPage = casts.length > USER_FEED_PAGE_SIZE;
+  const feed = casts
+    .slice(0, USER_FEED_PAGE_SIZE)
+    .map((cast) => castToFeedItem(cast, mentionedUsers));
 
   return {
     feed,
