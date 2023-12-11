@@ -215,3 +215,22 @@ model NotificationToken {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model TwitterUser {
+  id         String  @id
+  name       String
+  ens        String
+  ensAddress String
+  handle     String
+  followers  BigInt
+  verified   Boolean
+  ranking    BigInt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tweet {
+  id       String @id
+  authorId String
+}

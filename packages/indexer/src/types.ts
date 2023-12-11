@@ -218,3 +218,36 @@ export type Cred =
   | 'Purple'
   | 'PudgyPenguins'
   | 'Azuki';
+
+export interface Twitter {
+  id: number;
+  name: string;
+  username: string;
+  verified: boolean;
+  cred: Cred;
+  profile: {
+    id: number;
+    name: string;
+    username: string;
+    verified: boolean;
+    cred: Cred;
+  };
+}
+
+export interface EthLeadersResponse {
+  frens: [
+    {
+      id: string;
+      name: string;
+      ens: string;
+      handle: string;
+      followers: number;
+      verified: boolean;
+      updated: Date;
+      pfp: string;
+      ranking: number;
+    },
+  ];
+  count: number;
+  response_time: number;
+}
