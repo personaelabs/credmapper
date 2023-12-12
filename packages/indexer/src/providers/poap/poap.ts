@@ -5,13 +5,11 @@ import { processLogs } from '../../lib/processLogs';
 import * as chains from 'viem/chains';
 import { getClient } from '../ethRpc';
 import { TRANSFER_EVENT, EVENT_TOKEN_EVENT } from './abi/abi';
+import CONTRACTS from '../../contracts/allContracts';
 
-const POAP_DEPLOYED_BLOCK = 7844214;
-const POAP_CONTRACT = {
-  id: 302,
-  address: '0x22c1f6050e56d2876009903609a2cc3fef83b415' as Hex,
-  deployedBlock: BigInt(POAP_DEPLOYED_BLOCK),
-};
+const POAP_CONTRACT = CONTRACTS.find(
+  (contract) => contract.address === '0x22c1f6050e56d2876009903609a2cc3fef83b415',
+)!;
 
 const indexPoapTransferEvents = async (client: PublicClient<HttpTransport, Chain>) => {
   const latestSyncedBlock = await prisma.poapEventTokenEvent.aggregate({
@@ -22,7 +20,7 @@ const indexPoapTransferEvents = async (client: PublicClient<HttpTransport, Chain
 
   const fromBlock = latestSyncedBlock?._max.blockNumber
     ? latestSyncedBlock._max.blockNumber
-    : BigInt(POAP_DEPLOYED_BLOCK);
+    : POAP_CONTRACT.deployedBlock;
 
   const processor = async (
     logs: GetFilterLogsReturnType,
@@ -73,7 +71,7 @@ const indexEventTokenEvents = async (client: PublicClient<HttpTransport, Chain>)
 
   const fromBlock = latestSynchedEvent?._max.blockNumber
     ? latestSynchedEvent._max.blockNumber
-    : BigInt(POAP_DEPLOYED_BLOCK);
+    : POAP_CONTRACT.deployedBlock;
 
   const processor = async (
     logs: GetFilterLogsReturnType,

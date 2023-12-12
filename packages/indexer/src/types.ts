@@ -184,6 +184,7 @@ export interface ContractWithDeployedBlock {
   address: Hex;
   deployedBlock: bigint;
   indexed?: boolean;
+  type: ContractType;
 }
 
 export interface QueryTransfersResult {
@@ -218,3 +219,9 @@ export type Cred =
   | 'Purple'
   | 'PudgyPenguins'
   | 'Azuki';
+
+export enum ContractType {
+  ERC20 = 'ERC20',
+  ERC721 = 'ERC721',
+  Other = 'Other',
+}
