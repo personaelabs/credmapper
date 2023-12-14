@@ -1,0 +1,20 @@
+{
+  "name": "notifications",
+  "version": "1.0.0",
+  "scripts": {
+    "notifyPost": "pnpm ts-node src/notifyPost.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "expo-server-sdk": "^3.7.0",
+    "dotenv": "^16.3.1",
+    "@prisma/client": "4.5.0",
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.10",
+    "typescript": "^5.2.2"
+  }
+}

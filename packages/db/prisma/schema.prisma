@@ -189,3 +189,19 @@ model NotificationToken {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model NotificationTicket {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationSent {
+  castId String // TODO: Allow other id types as well.
+  token  String // TODO: Change this to userId when we implement login.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([castId, token])
+}
