@@ -2,7 +2,7 @@ import { TransferEvent } from '@prisma/client';
 import prisma from '../../prisma';
 import { GetFilterLogsReturnType, Hex, Chain, PublicClient, HttpTransport } from 'viem';
 import { processLogs } from '../../lib/processLogs';
-import CONTRACT_EVENTS from './contracts';
+import ERC_721_CONTRACTS from '../../contracts/erc721';
 import { TRANSFER_EVENT } from './abi/abi';
 import { ContractWithDeployedBlock } from '../../types';
 import { runInParallel } from '../../utils';
@@ -61,13 +61,13 @@ export const indexERC721 = async () => {
     async (client: PublicClient<HttpTransport, Chain>, contract: ContractWithDeployedBlock) => {
       await indexTransferEvents(client, contract);
     },
-    CONTRACT_EVENTS,
+    ERC_721_CONTRACTS,
   );
 };
 
 export const syncERC721 = async () => {
   // In sync mode, we only process the contracts that are already indexed.
-  const INDEXED_CONTRACTS = CONTRACT_EVENTS.filter((contract) => contract.indexed);
+  const INDEXED_CONTRACTS = ERC_721_CONTRACTS.filter((contract) => contract.indexed);
 
   console.log(`Syncing ${INDEXED_CONTRACTS.length} ERC721 contracts`);
 

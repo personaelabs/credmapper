@@ -5,14 +5,11 @@ import { processLogs } from '../../lib/processLogs';
 import * as chains from 'viem/chains';
 import { DEPOSIT_EVENT } from './abi/abi';
 import { getClient } from '../ethRpc';
-import { ContractWithDeployedBlock } from '../../types';
+import ALL_CONTRACTS from '../../contracts/allContracts';
 
-const FIRST_DEPOSIT_AT = BigInt(11184900); // A little before the first deposit event
-const BEACON_CONTRACT: ContractWithDeployedBlock = {
-  id: 301,
-  address: '0x00000000219ab540356cbb839cbe05303d7705fa',
-  deployedBlock: FIRST_DEPOSIT_AT,
-};
+const BEACON_CONTRACT = ALL_CONTRACTS.find(
+  (contract) => contract.address === '0x00000000219ab540356cbb839cbe05303d7705fa',
+)!;
 
 export const syncBeaconDepositors = async () => {
   const client = getClient(chains.mainnet);
@@ -57,7 +54,7 @@ export const syncBeaconDepositors = async () => {
   await processLogs(
     client,
     DEPOSIT_EVENT,
-    latestEvent?._max.blockNumber || FIRST_DEPOSIT_AT,
+    latestEvent?._max.blockNumber || BEACON_CONTRACT.deployedBlock,
     processor,
     BEACON_CONTRACT,
     BigInt(100),

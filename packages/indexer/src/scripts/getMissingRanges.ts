@@ -1,11 +1,11 @@
 import prisma from '../prisma';
 import { GetFilterLogsReturnType, Hex, HttpTransport, PublicClient } from 'viem';
-import { ERC20TransferEvent2 } from '@prisma/client';
+import { ERC20TransferEvent } from '@prisma/client';
 import { processLogs } from '../lib/processLogs';
 import * as chains from 'viem/chains';
 import { TRANSFER_EVENT } from '../providers/erc20/abi/abi';
 import { ContractWithDeployedBlock } from '../types';
-import CONTRACTS from '../providers/erc20/contracts';
+import CONTRACTS from '../contracts/erc20';
 import { runInParallel } from '../utils';
 
 const BATCH_SIZE = 2000;
@@ -44,10 +44,10 @@ const indexMissingRange = async (
           logIndex: logIndex,
         };
       })
-      .filter((data) => data) as ERC20TransferEvent2[];
+      .filter((data) => data) as ERC20TransferEvent[];
 
     if (data.length > 0) {
-      await prisma.eRC20TransferEvent2.createMany({
+      await prisma.eRC20TransferEvent.createMany({
         data,
         skipDuplicates: true,
       });

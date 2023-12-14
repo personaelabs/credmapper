@@ -1,8 +1,8 @@
-import { ERC20TransferEvent2 } from '@prisma/client';
+import { ERC20TransferEvent } from '@prisma/client';
 import prisma from '../../prisma';
 import { GetFilterLogsReturnType, Hex, Chain, PublicClient, HttpTransport } from 'viem';
 import { processLogs } from '../../lib/processLogs';
-import CONTRACTS from './contracts';
+import ERC_20_CONTRACTS from '../../contracts/erc20';
 import { TRANSFER_EVENT } from './abi/abi';
 import { ContractWithDeployedBlock } from '../../types';
 import { runInParallel } from '../../utils';
@@ -15,7 +15,7 @@ const indexTransferEvents = async (
 ) => {
   const label = `find latest event ${contract.id}`;
   console.time(label);
-  const latestSyncedEvent = await prisma.eRC20TransferEvent2.aggregate({
+  const latestSyncedEvent = await prisma.eRC20TransferEvent.aggregate({
     _max: {
       blockNumber: true,
     },
@@ -51,11 +51,11 @@ const indexTransferEvents = async (
           logIndex: logIndex,
         };
       })
-      .filter((data) => data) as ERC20TransferEvent2[];
+      .filter((data) => data) as ERC20TransferEvent[];
 
     if (data.length > 0) {
       console.log(chalk.gray(`Writing ${data.length} events for ${contract.id}`));
-      const result = await prisma.eRC20TransferEvent2.createMany({
+      const result = await prisma.eRC20TransferEvent.createMany({
         data,
         skipDuplicates: true,
       });
@@ -66,5 +66,5 @@ const indexTransferEvents = async (
 };
 
 export const indexERC20 = async () => {
-  await runInParallel(indexTransferEvents, CONTRACTS);
+  await runInParallel(indexTransferEvents, ERC_20_CONTRACTS);
 };

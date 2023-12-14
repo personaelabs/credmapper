@@ -11,7 +11,8 @@
     "check": "pnpm -r check",
     "prepare": "pnpm -F db build",
     "api:dev": "pnpm -F cred-api run dev",
-    "app:dev": "pnpm -F app run start"
+    "app:dev": "pnpm -F app run start",
+    "compile-circuit": "sh ./scripts/compile-web.sh && sh ./scripts/compile-node.sh"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,1 @@
+ALTER TABLE "ERC20TransferEvent2" RENAME TO "ERC20TransferEvent";
