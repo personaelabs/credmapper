@@ -95,6 +95,26 @@ export const assignBeaconGenesisDepositors = async () => {
   await assignCredToFcUsersByAddress('BeaconGenesisDepositor', addresses);
 };
 
+// Sync and assign cred to users who have > 1000 txs
+export const assignOver1000Txs = async () => {
+  const THRESHOLD = 1000;
+  await indexTxCount(THRESHOLD);
+
+  const result = await prisma.txCount.findMany({
+    where: {
+      txCount: {
+        gt: THRESHOLD,
+      },
+    },
+    select: {
+      address: true,
+    },
+  });
+
+  const addresses = result.map(({ address }) => address);
+  await assignCredToFcUsersByAddress('Over10000Txs', addresses);
+};
+
 // Sync and assign cred to users who have > 10000 txs
 export const assignOver10000Txs = async () => {
   const THRESHOLD = 10000;
