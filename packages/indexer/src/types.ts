@@ -212,6 +212,7 @@ export type Cred =
   | 'OnchainSince2016'
   | 'BeaconDepositOver256ETH'
   | 'BeaconGenesisDepositor'
+  | 'Over1000Txs'
   | 'Over10000Txs'
   | 'SuperRareOg'
   | 'Nouns'

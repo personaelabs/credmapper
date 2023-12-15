@@ -1734,7 +1734,7 @@ const CONTRACTS: ContractWithDeployedBlock[] = [
     type: ContractType.Other,
   },
   {
-    id: 302,
+    id: 306,
     name: 'POAP',
     address: '0x22c1f6050e56d2876009903609a2cc3fef83b415' as Hex,
     deployedBlock: BigInt(7844214),

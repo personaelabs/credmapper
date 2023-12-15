@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { syncCasts, syncReactions } from './casts';
 import {
+  assignOver1000Txs,
   assignOver10000Txs,
   assignOnchainSince2016,
   assignBeaconDepositOver256Eth,
@@ -16,6 +17,7 @@ import { syncUsers } from './providers/farcaster';
 
 // List of jobs that index data and assign cred to Farcaster users
 const assignCredJobs = [
+  assignOver1000Txs,
   assignOver10000Txs,
   assignOnchainSince2016,
   assignBeaconDepositOver256Eth,
