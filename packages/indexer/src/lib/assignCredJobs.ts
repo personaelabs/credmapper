@@ -112,7 +112,7 @@ export const assignOver1000Txs = async () => {
   });
 
   const addresses = result.map(({ address }) => address);
-  await assignCredToFcUsersByAddress('Over10000Txs', addresses);
+  await assignCredToFcUsersByAddress('Over1000Txs', addresses);
 };
 
 // Sync and assign cred to users who have > 10000 txs
