@@ -69,9 +69,18 @@ const credMeta: CredMeta[] = [
     spotlight: true,
     frequent: true,
   },
+  /*
   {
     id: 'Over10000Txs',
     name: 'Over 10,000 Txs',
+    image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-logo2.png',
+    spotlight: true,
+    frequent: false,
+  },
+  */
+  {
+    id: 'Over1000Txs',
+    name: 'Over 1,000 Txs',
     image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-logo2.png',
     spotlight: true,
     frequent: false,
