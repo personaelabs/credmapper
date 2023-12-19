@@ -13,26 +13,27 @@ const isDevToken = (token: string): boolean => {
 };
 
 const sendPostNotifications = async (castId: string, cred: string) => {
-  const existingTickets = await prisma.notificationTicket.findMany({
-    select: {
-      id: true,
-      token: true,
-    },
-  });
-
   const notificationTokens = await prisma.notificationToken.findMany({
     select: {
       token: true,
     },
   });
 
+  const cast = await prisma.packagedCast.findUnique({
+    select: {
+      text: true,
+    },
+    where: {
+      id: castId,
+    },
+  });
+
+  if (!cast) {
+    throw new Error('Cast not found');
+  }
+
   const messages = [];
   for (const { token } of notificationTokens) {
-    if (existingTickets.find((t) => t.token === token)) {
-      // Throw an error even if there is a single duplicate
-      throw new Error('Already sent');
-    }
-
     if (process.env.NODE_ENV !== 'production' && !isDevToken(token)) {
       throw new Error('Not a dev token');
     }
@@ -40,7 +41,8 @@ const sendPostNotifications = async (castId: string, cred: string) => {
     const message = {
       to: token,
       sound: 'default',
-      body: `Featured cred: New post from "${cred}"`,
+      title: `Featured cred: ${cred}`,
+      body: `${cast.text}`,
       data: { url: `/cast/${castId}` },
     };
 
@@ -59,14 +61,28 @@ const sendPostNotifications = async (castId: string, cred: string) => {
     console.error(error);
   }
 
+  /*
   await prisma.notificationTicket.createMany({
     data: tickets,
     skipDuplicates: true,
   });
+  */
 };
-
-// https://warpcast.com/chrismartz/0x18d38160d7bb980e4c2b41170087fba88fb982bf
-sendPostNotifications('0x0000767754a44bf5631903a860a46db8407f9ce4', 'Over 10,000 Txs');
 
 // https://warpcast.com/danfinlay/0xba7aaf91dd27a7b5ccd57420639b7912333b5b67
 // sendPostNotifications('0xba7aaf91dd27a7b5ccd57420639b7912333b5b67', 'Onchain since 2016');
+
+// https://warpcast.com/danfinlay/0x8566660f7a9bd6eda256e6ec693936ced670f56e
+// sendPostNotifications('0x8566660f7a9bd6eda256e6ec693936ced670f56e', 'Onchain since 2016');
+
+// https://warpcast.com/boris/0x44a8a6bd7f84d4ffaa1a4490fe115c924cec16a9
+// sendPostNotifications('0x44a8a6bd7f84d4ffaa1a4490fe115c924cec16a9', 'Onchain since 2016');
+
+// https://warpcast.com/boris/0x054669aa3de834004b2a1913e7f1b477456be548
+// sendPostNotifications('0x054669aa3de834004b2a1913e7f1b477456be548', 'Over 1,000 txs');
+
+// https://warpcast.com/0xrob/0xef6b6c886e7ef5067aba25c4e8762d9385758d4c
+// sendPostNotifications('0xef6b6c886e7ef5067aba25c4e8762d9385758d4c', 'Over 1,000 txs');
+
+// https://warpcast.com/grunt/0x925e385409b0bace23b5f1698021fa1736edccb5
+// sendPostNotifications('0x925e385409b0bace23b5f1698021fa1736edccb5', 'Beacon Deposit > 256ETH');
