@@ -29,7 +29,6 @@ const credMeta: CredMeta[] = [
     image:
       'https://i.seadn.io/gae/BdxvLseXcfl57BiuQcQYdJ64v-aI8din7WPk0Pgo3qQFhAUH-B6i-dCqqc_mCkRIzULmwzwecnohLhrcH8A9mpWIZqA7ygc52Sr81hE?auto=format&dpr=1&w=384',
   },
-  */
   {
     id: 'PudgyPenguins',
     name: 'PudgyPenguins Owner',
@@ -69,7 +68,6 @@ const credMeta: CredMeta[] = [
     spotlight: true,
     frequent: true,
   },
-  /*
   {
     id: 'Over10000Txs',
     name: 'Over 10,000 Txs',
