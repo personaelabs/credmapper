@@ -81,7 +81,7 @@ const credMeta: CredMeta[] = [
     name: 'Over 1,000 Txs',
     image: 'https://storage.googleapis.com/personae-proving-keys/creddd/images/eth-logo2.png',
     spotlight: true,
-    frequent: false,
+    frequent: true,
   },
   {
     id: 'BeaconDepositOver256ETH',
