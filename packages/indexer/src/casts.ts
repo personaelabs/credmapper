@@ -189,9 +189,10 @@ export const syncReactions = async () => {
   const newReactions = await getNewReactions(latestReactionTimestamp || FROM_DATE);
 
   const data = newReactions
+    .filter((reaction) => reaction.target_hash !== null)
     .map((reaction) => ({
       fid: reaction.fid,
-      castId: `0x${reaction.target_hash.toString('hex')}`,
+      castId: `0x${reaction.target_hash!.toString('hex')}`,
       timestamp: reaction.timestamp,
       reactionType: reaction.reaction_type,
     }))
